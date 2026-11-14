@@ -1,0 +1,2159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AdiJaya Dasboard — Operasional & Payroll Bengkel</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        canvas: '#FAF9F6',
+                        steel: '#1E3A8A',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FAF9F6;
+            color: #0F172A;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Tactile Drag & Drop Feedback */
+        .worker-card {
+            transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.18s ease, opacity 0.18s ease;
+            touch-action: manipulation;
+        }
+        .worker-card:active {
+            transform: scale(0.95);
+        }
+        .worker-card.dragging {
+            opacity: 0.5;
+            transform: scale(1.06) rotate(2deg);
+        }
+        .drop-zone {
+            transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+        }
+        .drop-zone.drag-over {
+            border-color: #1E3A8A;
+            background-color: #EFF6FF;
+            transform: scale(1.01);
+        }
+        /* Custom subtle scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 9999px;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.92); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        #pattern-canvas-wrap {
+            touch-action: none;
+            user-select: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#FAF9F6] text-slate-900 antialiased selection:bg-blue-900 selection:text-white">
+
+    <!-- TOP HEADER & ROLE SWITCHER -->
+    <header class="sticky top-0 z-30 bg-[#FAF9F6]/90 backdrop-blur-md border-b border-stone-200/80">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+            <!-- Brand Identity with Custom AJ Logo -->
+            <div class="flex items-center gap-2.5">
+                <div class="w-10 h-10 rounded-xl bg-[#1C1C1C] flex items-center justify-center shadow-sm border border-stone-800 shrink-0 p-1">
+                    <svg viewBox="0 0 120 105" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Logo Adi Jaya">
+                        <!-- Interlocked Orange A & White J -->
+                        <path d="M18 76L44 12H60L86 76H70L64.5 61H39.5L34 76H18ZM43.5 49H60.5L52 26.5L43.5 49Z" fill="#F94D00"/>
+                        <path d="M84 36H100V74C100 89.5 89.5 98 73.5 98C58 98 48 89.5 48 75H63.5C63.5 81.5 67.5 85 73.5 85C80 85 84 81 84 73.5V36Z" fill="#FFFFFF"/>
+                        <!-- Overlap notch for authentic interlock -->
+                        <path d="M62 55L71 76H85L73 48L62 55Z" fill="#F94D00"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 leading-none">AdiJaya Dasboard</h1>
+                    <p class="text-[10px] font-bold tracking-wider uppercase text-slate-500 mt-0.5">Welding & Construction</p>
+                </div>
+            </div>
+
+            <!-- Role Switcher Toggle -->
+            <div class="flex items-center gap-2">
+                <button id="btn-lock-bos" onclick="lockBosMode()" title="Kunci Kembali Mode Bos"
+                    class="hidden p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-slate-600 transition active:scale-95">
+                    <i data-lucide="lock" class="w-4 h-4"></i>
+                </button>
+
+                <div class="bg-stone-200/80 p-1 rounded-xl flex items-center border border-stone-300/60 shadow-inner">
+                    <button id="btn-mode-bos" onclick="switchRole('bos')"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-blue-900 text-white shadow-sm">
+                        <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+                        <span>Mode Bos</span>
+                    </button>
+                    <button id="btn-mode-worker" onclick="switchRole('worker')"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+                        <i data-lucide="hard-hat" class="w-3.5 h-3.5"></i>
+                        <span>HP Tukang</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===================================================================== -->
+    <!-- BOSS PATTERN LOCK GATE (POLA HURUF W)                                 -->
+    <!-- ===================================================================== -->
+    <section id="bos-pattern-gate" class="flex-1 max-w-md w-full mx-auto px-4 py-8 flex flex-col items-center justify-center">
+        <div class="bg-white w-full rounded-3xl p-6 border border-stone-200 shadow-sm text-center space-y-5 animate-pop">
+            <div class="w-16 h-16 rounded-2xl bg-[#1C1C1C] mx-auto flex items-center justify-center p-2.5 shadow-md">
+                <svg viewBox="0 0 120 105" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 76L44 12H60L86 76H70L64.5 61H39.5L34 76H18ZM43.5 49H60.5L52 26.5L43.5 49Z" fill="#F94D00"/>
+                    <path d="M84 36H100V74C100 89.5 89.5 98 73.5 98C58 98 48 89.5 48 75H63.5C63.5 81.5 67.5 85 73.5 85C80 85 84 81 84 73.5V36Z" fill="#FFFFFF"/>
+                    <path d="M62 55L71 76H85L73 48L62 55Z" fill="#F94D00"/>
+                </svg>
+            </div>
+            <div>
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 text-[#F94D00] text-[11px] font-bold mb-1">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Akses Owner Terkunci
+                </span>
+                <h2 class="text-lg font-extrabold text-slate-900">Masukkan Pola Akses</h2>
+            </div>
+
+            <!-- 3x3 Interactive Gesture Grid -->
+            <div id="pattern-canvas-wrap" class="relative w-64 h-64 mx-auto bg-stone-50 rounded-3xl border border-stone-200/90 shadow-inner">
+                <svg id="pattern-svg" viewBox="0 0 256 256" class="w-full h-full">
+                    <polyline id="pattern-line" points="" fill="none" stroke="#F94D00" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+                    <g id="pattern-nodes"></g>
+                </svg>
+            </div>
+
+            <div class="flex items-center justify-center gap-2 pt-1">
+                <button onclick="resetPatternDrawing()" class="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-bold text-slate-600 transition">
+                    Reset Pola
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW A: MODE BOS (OWNER DASHBOARD)                                    -->
+    <!-- ===================================================================== -->
+    <main id="view-bos" class="hidden flex-1 max-w-5xl w-full mx-auto px-4 pt-4 pb-24">
+
+        <!-- TAB 1: PAPAN KERJA HARIAN (VISUAL DISPATCH BOARD) -->
+        <div id="bos-tab-board" class="space-y-5">
+
+            <!-- Date Selector & Quick Summary Bar -->
+            <div class="bg-white rounded-2xl p-3.5 border border-stone-200/90 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center justify-between sm:justify-start gap-2">
+                    <button onclick="changeDate(-1)" class="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 active:scale-95 transition" aria-label="Kemarin">
+                        <i data-lucide="chevron-left" class="w-4 h-4 text-slate-700"></i>
+                    </button>
+                    <div class="text-center sm:text-left px-2">
+                        <div class="flex items-center justify-center sm:justify-start gap-1.5">
+                            <span id="date-badge" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-50 text-blue-900">Hari Ini</span>
+                            <span id="active-date-display" class="text-sm font-bold text-slate-900">Sabtu, 14 Nov 2026</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5" id="daily-presence-summary">0 dari 12 tukang ditugaskan</p>
+                    </div>
+                    <button onclick="changeDate(1)" class="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 active:scale-95 transition" aria-label="Besok">
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-700"></i>
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-2 justify-end">
+                    <button onclick="copyYesterdayDispatch()"
+                        class="px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-semibold text-slate-700 flex items-center gap-1.5 transition active:scale-95">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span>Salin Kemarin</span>
+                    </button>
+                    <button onclick="openLocationModal()"
+                        class="px-3.5 py-2 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition active:scale-95">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <span>Proyek / Lokasi</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Worker Pool (12 Tukang) -->
+            <section class="bg-white rounded-2xl p-4 border border-stone-200/90 shadow-xs">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <span>Tim Tukang (<span id="worker-count-badge">0</span> Personil)</span>
+                            <span class="text-[11px] font-normal text-slate-500 hidden sm:inline">• Tarik (drag) atau tap foto wajah ke lokasi kerja</span>
+                        </h2>
+                    </div>
+                    <div class="flex items-center gap-3 text-[11px] font-medium">
+                        <span class="flex items-center gap-1 text-amber-700">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-200"></span>
+                            5 Inti
+                        </span>
+                        <span class="flex items-center gap-1 text-slate-500">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-300 ring-2 ring-slate-100"></span>
+                            7 Rolling
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Grid / Horizontal Touch Scroll Avatar Pool -->
+                <div id="worker-pool-grid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2.5">
+                    <!-- Rendered dynamically via JS -->
+                </div>
+            </section>
+
+            <!-- Drop Zones: Kartu Lokasi Kerja -->
+            <section class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500">Zona Penempatan & Target Garapan</h3>
+                    <span class="text-xs text-slate-400">Otomatis tercatat Hadir</span>
+                </div>
+                <div id="locations-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Rendered dynamically via JS -->
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 2: REKAP HARIAN & BUKU KASBON -->
+        <div id="bos-tab-kasbon" class="hidden space-y-5">
+            <!-- Summary Cards Kasbon -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div class="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
+                    <div class="text-xs font-medium text-slate-500 mb-1">Total Piutang Kasbon</div>
+                    <div class="text-lg sm:text-xl font-extrabold text-slate-900" id="stat-total-kasbon">Rp 0</div>
+                    <div class="text-[11px] text-amber-700 font-medium mt-1">Tanpa bunga (0%)</div>
+                </div>
+                <div class="bg-white p-4 rounded-2xl border border-stone-200 shadow-xs">
+                    <div class="text-xs font-medium text-slate-500 mb-1">Potongan Sabtu Ini</div>
+                    <div class="text-lg sm:text-xl font-extrabold text-emerald-700" id="stat-weekly-deduct">Rp 0</div>
+                    <div class="text-[11px] text-slate-500 mt-1">Otomatis potong gaji</div>
+                </div>
+                <div class="col-span-2 sm:col-span-1 bg-white p-4 rounded-2xl border border-stone-200 shadow-xs flex items-center justify-between">
+                    <div>
+                        <div class="text-xs font-medium text-slate-500 mb-1">Catat Pinjaman</div>
+                        <div class="text-xs text-slate-600">Tambah kasbon tukang</div>
+                    </div>
+                    <button onclick="openKasbonModal()"
+                        class="px-3.5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs flex items-center gap-1.5 transition active:scale-95">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span>Tambah Bon</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Buku Kasbon Aktif per Tukang -->
+            <section class="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
+                <div class="p-4 border-b border-stone-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Buku Saldo Kasbon & Cicilan Mingguan</h3>
+                        <p class="text-xs text-slate-500">Atur nominal potongan gaji setiap hari Sabtu</p>
+                    </div>
+                </div>
+                <div id="kasbon-list-container" class="divide-y divide-stone-100">
+                    <!-- Rendered dynamically via JS -->
+                </div>
+            </section>
+
+            <!-- Log Riwayat Kehadiran Harian -->
+            <section class="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
+                <div class="p-4 border-b border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900">Log Kehadiran & Penempatan Harian</h3>
+                        <p class="text-xs text-slate-500">Rekap otomatis dari Papan Kerja Harian</p>
+                    </div>
+                    <select id="log-filter-date" onchange="renderLogsSection()"
+                        class="bg-stone-100 border border-stone-200 text-xs font-semibold text-slate-700 rounded-xl px-3 py-2 focus:outline-none">
+                        <option value="ALL">Semua Tanggal Minggu Ini</option>
+                        <option value="2026-11-14">Sabtu, 14 Nov 2026 (Hari Ini)</option>
+                        <option value="2026-11-13">Jumat, 13 Nov 2026</option>
+                        <option value="2026-11-12">Kamis, 12 Nov 2026</option>
+                        <option value="2026-11-11">Rabu, 11 Nov 2026</option>
+                        <option value="2026-11-10">Selasa, 10 Nov 2026</option>
+                        <option value="2026-11-09">Senin, 9 Nov 2026</option>
+                    </select>
+                </div>
+                <div id="attendance-logs-container" class="divide-y divide-stone-100">
+                    <!-- Rendered dynamically via JS -->
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 3: PAYOUT MINGGUAN (AUTO-PAYROLL) -->
+        <div id="bos-tab-payroll" class="hidden space-y-5">
+            <!-- Hero Total Payout Banner -->
+            <div class="bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-md relative overflow-hidden">
+                <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-amber-300 text-xs font-bold mb-2">
+                            <i data-lucide="calendar-check" class="w-3.5 h-3.5"></i>
+                            Periode: Sen, 9 Nov – Sab, 14 Nov 2026
+                        </span>
+                        <p class="text-xs text-blue-200 font-medium">Total Uang Tunai / Transfer Gajian Sabtu Ini</p>
+                        <h2 id="payroll-grand-total" class="text-3xl sm:text-4xl font-extrabold tracking-tight mt-1">Rp 0</h2>
+                        <p id="payroll-paid-status" class="text-xs text-emerald-300 mt-2 font-medium">0 dari 12 tukang sudah dibayar</p>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <button onclick="copyAllPayrollWhatsApp()"
+                            class="px-4 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold text-xs shadow-sm flex items-center justify-center gap-2 transition active:scale-95">
+                            <i data-lucide="share-2" class="w-4 h-4"></i>
+                            <span>Salin Rekap WA</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rincian Slip Gaji per Tukang -->
+            <div id="payroll-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <!-- Rendered dynamically via JS -->
+            </div>
+        </div>
+
+        <!-- TAB 4: JADWAL SCHEDULE (KALENDER & RENCANA TANGGAL) -->
+        <div id="bos-tab-schedule" class="hidden space-y-5">
+            <div class="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="calendar-days" class="w-5 h-5 text-[#F94D00]"></i>
+                        <span>Jadwal Schedule Proyek & Tukang</span>
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Atur & rencanakan jadwal penugasan per tanggal secara terpisah</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="date" id="schedule-date-picker" value="2026-11-14" onchange="onScheduleDateChange(this.value)"
+                        class="px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-900">
+                    <button onclick="openScheduleAddModal()"
+                        class="px-3.5 py-2 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95">
+                        <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+                        <span>Tambah Jadwal</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Strip Tanggal Cepat (7 Hari) -->
+            <div id="schedule-week-strip" class="grid grid-cols-7 gap-1.5 sm:gap-2">
+                <!-- Rendered dynamically via JS -->
+            </div>
+
+            <!-- Daftar Schedule per Lokasi pada Tanggal Terpilih -->
+            <div class="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
+                <div class="p-4 border-b border-stone-100 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-[#F94D00]">Agenda Tanggal Terpilih</span>
+                        <h3 id="schedule-selected-title" class="text-sm font-extrabold text-slate-900">Sabtu, 14 Nov 2026</h3>
+                    </div>
+                    <button onclick="jumpScheduleToBoard()" class="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-bold text-blue-900 flex items-center gap-1">
+                        <span>Buka di Papan Kerja</span>
+                        <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+                <div id="schedule-list-container" class="divide-y divide-stone-100">
+                    <!-- Rendered dynamically via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: EDIT KARYAWAN (DATA MASTER TUKANG) -->
+        <div id="bos-tab-workers" class="hidden space-y-5">
+            <div class="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="users" class="w-5 h-5 text-blue-900"></i>
+                        <span>Manajemen Data Karyawan / Tukang</span>
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Tambah personil baru, edit rate harian/lembur, tim Inti/Rolling, dan PIN HP</p>
+                </div>
+                <button onclick="openWorkerEditModal()"
+                    class="px-4 py-2.5 rounded-xl bg-[#F94D00] hover:bg-orange-600 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-xs transition active:scale-95">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span>Tambah Tukang Baru</span>
+                </button>
+            </div>
+
+            <div id="workers-management-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <!-- Rendered dynamically via JS -->
+            </div>
+        </div>
+    </main>
+
+    <!-- BOTTOM NAVIGATION BAR (MODE BOS — 5 MENU TERPISAH) -->
+    <nav id="bos-bottom-nav" class="hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-stone-200 shadow-lg">
+        <div class="max-w-3xl mx-auto grid grid-cols-5 p-1.5 gap-1">
+            <button onclick="switchBosTab('board')" id="nav-board"
+                class="py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-blue-900 bg-blue-50 font-bold text-[11px] transition">
+                <i data-lucide="kanban" class="w-4 h-4"></i>
+                <span>Papan Kerja</span>
+            </button>
+            <button onclick="switchBosTab('schedule')" id="nav-schedule"
+                class="py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-stone-100 font-semibold text-[11px] transition">
+                <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                <span>Schedule</span>
+            </button>
+            <button onclick="switchBosTab('workers')" id="nav-workers"
+                class="py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-stone-100 font-semibold text-[11px] transition">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                <span>Karyawan</span>
+            </button>
+            <button onclick="switchBosTab('kasbon')" id="nav-kasbon"
+                class="py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-stone-100 font-semibold text-[11px] transition">
+                <i data-lucide="wallet" class="w-4 h-4"></i>
+                <span>Kasbon</span>
+            </button>
+            <button onclick="switchBosTab('payroll')" id="nav-payroll"
+                class="py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-stone-100 font-semibold text-[11px] transition">
+                <i data-lucide="banknote" class="w-4 h-4"></i>
+                <span>Gajian</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW B: MODE KARYAWAN (TAMPILAN HP TUKANG)                            -->
+    <!-- ===================================================================== -->
+    <main id="view-worker" class="hidden flex-1 max-w-md w-full mx-auto px-4 pt-5 pb-12">
+
+        <!-- Step 1: Simulasi Login Wajah + PIN -->
+        <div id="worker-login-screen" class="space-y-4">
+            <div class="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs text-center">
+                <span class="inline-block px-2.5 py-1 rounded-full bg-blue-50 text-blue-900 text-[11px] font-bold mb-1.5">Absen & Cek Gaji Mandiri</span>
+                <h2 class="text-lg font-extrabold text-slate-900">Tap Foto Wajah Anda</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Pilih profil Anda untuk masuk</p>
+            </div>
+
+            <div id="worker-login-grid" class="grid grid-cols-3 gap-3">
+                <!-- Rendered dynamically via JS -->
+            </div>
+        </div>
+
+        <!-- Step 2: PIN Pad Modal / Inline -->
+        <div id="worker-pin-screen" class="hidden bg-white rounded-3xl p-6 border border-stone-200 shadow-sm text-center space-y-5 animate-pop">
+            <button onclick="cancelWorkerPin()" class="text-xs font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Ganti Wajah
+            </button>
+            <div>
+                <img id="pin-worker-avatar" src="" alt="Avatar" class="w-20 h-20 rounded-full mx-auto object-cover ring-4 ring-amber-400 shadow-sm">
+                <h3 id="pin-worker-name" class="text-lg font-extrabold text-slate-900 mt-3">Nama Tukang</h3>
+                <p class="text-xs text-slate-500">Masukkan 4 digit PIN pribadi Anda</p>
+            </div>
+
+            <!-- PIN Dots -->
+            <div class="flex justify-center gap-3" id="pin-dots">
+                <span class="w-3.5 h-3.5 rounded-full bg-stone-200"></span>
+                <span class="w-3.5 h-3.5 rounded-full bg-stone-200"></span>
+                <span class="w-3.5 h-3.5 rounded-full bg-stone-200"></span>
+                <span class="w-3.5 h-3.5 rounded-full bg-stone-200"></span>
+            </div>
+
+            <!-- Numpad -->
+            <div class="grid grid-cols-3 gap-2.5 max-w-[240px] mx-auto">
+                <button onclick="enterPinDigit('1')" class="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 font-bold text-lg active:scale-95">1</button>
+                <button onclick="enterPinDigit('2')" class="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 font-bold text-lg active:scale-95">2</button>
+                <button onclick="enterPinDigit('3')" class="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 font-bold text-lg active:scale-95">3</button>
+                <button onclick="enterPinDigit('4')" class="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 font-bold text-lg active:scale-95">4</button>
+                <button onclick="enterPinDigit('5')" class="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 font-bold text-lg active:scale-95">5</button>
+                <button onclick="enterPinDigit('6')" class="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 font-bold text-lg active:scale-95">6</button>
+                <button onclick="enterPinDigit('7')" class="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 font-bold text-lg active:scale-95">7</button>
+                <button onclick="enterPinDigit('8')" class="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 font-bold text-lg active:scale-95">8</button>
+                <button onclick="enterPinDigit('9')" class="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 font-bold text-lg active:scale-95">9</button>
+                <div class="h-12"></div>
+                <button onclick="enterPinDigit('0')" class="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 font-bold text-lg active:scale-95">0</button>
+                <button onclick="clearPin()" class="h-12 rounded-2xl bg-rose-50 text-rose-600 font-bold text-xs active:scale-95">HAPUS</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Dashboard Pribadi Tukang -->
+        <div id="worker-dashboard-screen" class="hidden space-y-4 animate-pop">
+            <!-- Profile Header -->
+            <div class="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <img id="wd-avatar" src="" class="w-12 h-12 rounded-full object-cover ring-2 ring-blue-900">
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <h3 id="wd-name" class="text-base font-extrabold text-slate-900">Kang Hendra</h3>
+                            <span id="wd-tier-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">INTI</span>
+                        </div>
+                        <p id="wd-role" class="text-xs text-slate-500">Spesialis Las • Rate Rp 160.000/hari</p>
+                    </div>
+                </div>
+                <button onclick="logoutWorker()" class="px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-xs font-bold text-slate-600">
+                    Keluar
+                </button>
+            </div>
+
+            <!-- Kartu 1: Tugas Hari Ini -->
+            <div class="bg-white rounded-2xl p-5 border border-stone-200 shadow-xs space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-blue-900 flex items-center gap-1.5">
+                        <i data-lucide="map-pin" class="w-4 h-4"></i> Penempatan Hari Ini
+                    </span>
+                    <span id="wd-today-date" class="text-xs font-medium text-slate-400">Sabtu, 14 Nov</span>
+                </div>
+                <div id="wd-location-box" class="p-4 rounded-2xl bg-blue-50/80 border border-blue-100">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- Kartu 2: Tracker Lembur & Estimasi Gaji Sabtu -->
+            <div class="bg-gradient-to-br from-emerald-800 to-emerald-950 text-white rounded-3xl p-5 shadow-md space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-200">Estimasi Terima Sabtu Ini</span>
+                    <i data-lucide="wallet" class="w-5 h-5 text-emerald-300"></i>
+                </div>
+                <div>
+                    <div id="wd-net-pay" class="text-3xl font-extrabold tracking-tight">Rp 0</div>
+                    <p class="text-[11px] text-emerald-200 mt-1">Sudah dikurangi cicilan kasbon minggu ini</p>
+                </div>
+                <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/15 text-center">
+                    <div class="bg-white/10 rounded-xl p-2.5">
+                        <div id="wd-days-count" class="text-base font-extrabold">0 Hari</div>
+                        <div class="text-[10px] text-emerald-200">Masuk Kerja</div>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-2.5">
+                        <div id="wd-ot-hours" class="text-base font-extrabold text-amber-300">0 Jam</div>
+                        <div class="text-[10px] text-emerald-200">Total Lembur</div>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-2.5">
+                        <div id="wd-kasbon-rem" class="text-base font-extrabold text-rose-200">Rp 0</div>
+                        <div class="text-[10px] text-emerald-200">Sisa Kasbon</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- MODALS & TOAST NOTIFICATIONS                                          -->
+    <!-- ===================================================================== -->
+
+    <!-- Modal: Pilih Lokasi via Tap (Mobile-Friendly Dispatch) -->
+    <div id="modal-assign" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-stone-200 animate-pop">
+            <div class="flex items-center justify-between pb-3 border-b border-stone-100">
+                <div class="flex items-center gap-3">
+                    <img id="assign-modal-avatar" src="" class="w-11 h-11 rounded-full object-cover ring-2 ring-blue-900">
+                    <div>
+                        <h3 id="assign-modal-name" class="text-base font-extrabold text-slate-900">Nama Tukang</h3>
+                        <p id="assign-modal-role" class="text-xs text-slate-500">Pilih lokasi penugasan hari ini</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('modal-assign')" class="p-2 rounded-full bg-stone-100 text-slate-500 hover:text-slate-800">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div id="assign-modal-locations" class="mt-4 space-y-2 max-h-72 overflow-y-auto">
+                <!-- Rendered dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Tambah / Edit Lokasi Proyek -->
+    <div id="modal-location" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-stone-200 animate-pop">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-extrabold text-slate-900" id="modal-location-title">Tambah Lokasi Proyek</h3>
+                <button onclick="closeModal('modal-location')" class="p-1.5 rounded-full bg-stone-100 text-slate-500">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <input type="hidden" id="edit-loc-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lokasi / Proyek</label>
+                    <input type="text" id="input-loc-name" placeholder="Contoh: Ruko Pak Hendra"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-blue-900">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Daftar Target Garapan (Pisahkan dengan koma)</label>
+                    <textarea id="input-loc-tasks" rows="3" placeholder="Potong Hollow, Las Rangka, Cat Dasar"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-blue-900"></textarea>
+                </div>
+            </div>
+            <div class="mt-5 flex gap-2">
+                <button onclick="saveLocationModal()" class="flex-1 py-3 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-bold text-sm transition">
+                    Simpan Lokasi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Tambah Kasbon Baru -->
+    <div id="modal-kasbon" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-stone-200 animate-pop">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-extrabold text-slate-900">Catat Kasbon Baru (0% Bunga)</h3>
+                <button onclick="closeModal('modal-kasbon')" class="p-1.5 rounded-full bg-stone-100 text-slate-500">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Tukang</label>
+                    <select id="kasbon-worker-select" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm bg-white focus:outline-none">
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nominal Pinjaman (Rp)</label>
+                    <input type="number" id="kasbon-amount" placeholder="200000" step="50000"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-blue-900">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Target Cicilan per Sabtu (Rp)</label>
+                    <input type="number" id="kasbon-deduction" placeholder="50000" step="25000"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-blue-900">
+                </div>
+            </div>
+            <button onclick="saveKasbonModal()" class="mt-5 w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm transition">
+                Simpan Kasbon
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal: Tambah Jadwal Schedule per Tanggal -->
+    <div id="modal-schedule" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-stone-200 animate-pop">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-extrabold text-slate-900">Atur Jadwal Schedule</h3>
+                <button onclick="closeModal('modal-schedule')" class="p-1.5 rounded-full bg-stone-100 text-slate-500">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Jadwal</label>
+                    <input type="date" id="sched-modal-date"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-blue-900">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Tukang</label>
+                    <select id="sched-modal-worker" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm bg-white focus:outline-none">
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Lokasi / Proyek Tujuan</label>
+                    <select id="sched-modal-location" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm bg-white focus:outline-none">
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Rencana Jam Lembur</label>
+                    <select id="sched-modal-overtime" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-sm bg-white focus:outline-none">
+                        <option value="0">Normal (0 Jam Lembur)</option>
+                        <option value="1">+1 Jam Lembur</option>
+                        <option value="2">+2 Jam Lembur</option>
+                        <option value="3">+3 Jam Lembur</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="saveScheduleModal()" class="mt-5 w-full py-3 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-bold text-sm transition">
+                Simpan ke Schedule
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal: Tambah / Edit Karyawan -->
+    <div id="modal-worker-edit" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-stone-200 animate-pop max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-extrabold text-slate-900" id="modal-worker-title">Edit Data Tukang</h3>
+                <button onclick="closeModal('modal-worker-edit')" class="p-1.5 rounded-full bg-stone-100 text-slate-500">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <input type="hidden" id="edit-worker-id">
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap</label>
+                        <input type="text" id="edit-worker-name" placeholder="Hendra Wijaya"
+                            class="w-full px-3 py-2 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-blue-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nama Panggilan</label>
+                        <input type="text" id="edit-worker-nickname" placeholder="Kang Hendra"
+                            class="w-full px-3 py-2 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-blue-900">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Keahlian / Role</label>
+                        <select id="edit-worker-role" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-sm bg-white focus:outline-none">
+                            <option value="Las">Las</option>
+                            <option value="Sipil">Sipil</option>
+                            <option value="Kernet">Kernet</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Status Tim</label>
+                        <select id="edit-worker-tier" class="w-full px-3 py-2 rounded-xl border border-stone-300 text-sm bg-white focus:outline-none">
+                            <option value="Inti">Inti (Ring Emas)</option>
+                            <option value="Rolling">Rolling (Ring Abu)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Rate Harian (Rp)</label>
+                        <input type="number" id="edit-worker-daily" step="5000" value="140000"
+                            class="w-full px-3 py-2 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-blue-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Rate Lembur/Jam (Rp)</label>
+                        <input type="number" id="edit-worker-overtime" step="2500" value="20000"
+                            class="w-full px-3 py-2 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-blue-900">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">PIN Login HP (4 Digit)</label>
+                        <input type="text" id="edit-worker-pin" maxlength="4" value="1234"
+                            class="w-full px-3 py-2 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-blue-900">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">URL Foto (Opsional)</label>
+                        <input type="text" id="edit-worker-avatar" placeholder="https://..."
+                            class="w-full px-3 py-2 rounded-xl border border-stone-300 text-sm focus:outline-none focus:border-blue-900">
+                    </div>
+                </div>
+            </div>
+            <div class="mt-5 flex gap-2">
+                <button id="btn-delete-worker" onclick="deleteWorkerFromModal()" class="hidden px-4 py-3 rounded-xl bg-rose-50 text-rose-700 font-bold text-xs hover:bg-rose-100 transition">
+                    Hapus
+                </button>
+                <button onclick="saveWorkerEditModal()" class="flex-1 py-3 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-bold text-sm transition">
+                    Simpan Data Tukang
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Supabase Connection & Schema Info -->
+    <div id="modal-supabase" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-stone-200 animate-pop">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="text-base font-extrabold text-slate-900">Status Sinkronisasi Data</h3>
+                </div>
+                <button onclick="closeModal('modal-supabase')" class="p-1.5 rounded-full bg-stone-100 text-slate-500">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+                Sistem penyimpanan operasional bengkel aktif dan terlindungi. Seluruh data penempatan harian, jadwal schedule, kasbon, dan rekap gaji tersimpan aman.
+            </p>
+            <div class="mt-4 flex gap-2">
+                <button onclick="resetDemoData()" class="px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 font-bold text-xs hover:bg-rose-100 transition">
+                    Reset Data Demo
+                </button>
+                <button onclick="closeModal('modal-supabase')" class="flex-1 py-2.5 rounded-xl bg-blue-900 text-white font-bold text-xs">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Feedback -->
+    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 hidden bg-slate-900 text-white px-4 py-2.5 rounded-full text-xs font-semibold shadow-lg flex items-center gap-2 animate-pop">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toast-message">Tersimpan</span>
+    </div>
+
+    <script>
+        /**
+         * ============================================================================
+         * 1. SUPABASE SERVICE LAYER (READY FOR REAL SUPABASE URL & ANON KEY)
+         * ============================================================================
+         * Cara integrasi ke Supabase asli:
+         * 1. Tambahkan CDN: <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>
+         * 2. Isi SUPABASE_URL dan SUPABASE_ANON_KEY di bawah ini.
+         * 3. Aktifkan pemanggilan client `supabase.from(...)` di dalam setiap method.
+         */
+        const SupabaseService = {
+            SUPABASE_URL: 'https://your-project-id.supabase.co',
+            SUPABASE_ANON_KEY: 'your-public-anon-key',
+            STORAGE_KEY: 'adijaya_bengkel_state_v1',
+
+            // Table names reference:
+            tables: {
+                workers: 'workers',
+                locations: 'locations',
+                dailyAssignments: 'daily_assignments',
+                kasbonLogs: 'kasbon_logs'
+            },
+
+            saveState(state) {
+                // Simulasi upsert ke Supabase (menggunakan localStorage untuk demo interaktif)
+                localStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
+            },
+
+            loadState() {
+                const saved = localStorage.getItem(this.STORAGE_KEY);
+                if (saved) {
+                    try {
+                        return JSON.parse(saved);
+                    } catch (e) {
+                        console.error('Gagal parsing state lokal:', e);
+                    }
+                }
+                return JSON.parse(JSON.stringify(DEFAULT_STATE));
+            },
+
+            async syncAssignment(workDate, workerId, locationId, overtimeHours = 0) {
+                // Contoh query Supabase asli:
+                // await supabase.from(this.tables.dailyAssignments).upsert({
+                //   work_date: workDate, worker_id: workerId, location_id: locationId, overtime_hours: overtimeHours
+                // }, { onConflict: 'work_date,worker_id' });
+                return { ok: true };
+            },
+
+            async removeAssignment(workDate, workerId) {
+                // await supabase.from(this.tables.dailyAssignments).delete().match({ work_date: workDate, worker_id: workerId });
+                return { ok: true };
+            },
+
+            async recordKasbon(workerId, amount, note = 'Kasbon baru') {
+                // await supabase.from(this.tables.kasbonLogs).insert({ worker_id: workerId, amount, note });
+                return { ok: true };
+            }
+        };
+
+        /**
+         * ============================================================================
+         * 2. EMPTY INITIAL STATE (SIAP DIISI SENDIRI)
+         * ============================================================================
+         */
+        const DEFAULT_STATE = {
+            workers: [],
+            locations: [],
+            assignments: {
+                '2026-11-14': []
+            }
+        };
+
+        // Global UI State
+        let appState = SupabaseService.loadState();
+        let activeDate = '2026-11-14';
+        let activeScheduleDate = '2026-11-14';
+        let activeRole = 'bos';
+        let isBosUnlocked = false;
+        let activeBosTab = 'board';
+        let draggedWorkerId = null;
+        let selectedWorkerForAssign = null;
+        let pinTargetWorkerId = null;
+        let enteredPin = '';
+        let loggedInWorkerId = null;
+
+        // ============================================================================
+        // 3. PATTERN LOCK LOGIC (POLA HURUF "W")
+        // ============================================================================
+        const NODE_COORDS = {
+            1: { x: 48, y: 48 },  2: { x: 128, y: 48 },  3: { x: 208, y: 48 },
+            4: { x: 48, y: 128 }, 5: { x: 128, y: 128 }, 6: { x: 208, y: 128 },
+            7: { x: 48, y: 208 }, 8: { x: 128, y: 208 }, 9: { x: 208, y: 208 }
+        };
+        const TARGET_PATTERN_W = [1, 4, 7, 5, 9, 6, 3];
+        let drawnPattern = [];
+        let isDrawingPattern = false;
+
+        function initPatternLock() {
+            const nodesGroup = document.getElementById('pattern-nodes');
+            if (!nodesGroup) return;
+            nodesGroup.innerHTML = Object.entries(NODE_COORDS).map(([id, pos]) => `
+                <g class="pattern-node" data-node="${id}">
+                    <circle cx="${pos.x}" cy="${pos.y}" r="22" fill="transparent" />
+                    <circle id="pnode-ring-${id}" cx="${pos.x}" cy="${pos.y}" r="14" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2" />
+                    <circle id="pnode-dot-${id}" cx="${pos.x}" cy="${pos.y}" r="5" fill="#94A3B8" />
+                </g>
+            `).join('');
+
+            const wrap = document.getElementById('pattern-canvas-wrap');
+            if (!wrap) return;
+
+            const getPointerNode = (clientX, clientY) => {
+                const rect = wrap.getBoundingClientRect();
+                const scaleX = 256 / rect.width;
+                const scaleY = 256 / rect.height;
+                const x = (clientX - rect.left) * scaleX;
+                const y = (clientY - rect.top) * scaleY;
+                for (const [id, pos] of Object.entries(NODE_COORDS)) {
+                    const dist = Math.hypot(x - pos.x, y - pos.y);
+                    if (dist <= 26) return Number(id);
+                }
+                return null;
+            };
+
+            const startDraw = (e) => {
+                const pt = e.touches ? e.touches[0] : e;
+                isDrawingPattern = true;
+                drawnPattern = [];
+                updatePatternVisuals();
+                const node = getPointerNode(pt.clientX, pt.clientY);
+                if (node) addPatternNode(node);
+            };
+
+            const moveDraw = (e) => {
+                if (!isDrawingPattern) return;
+                if (e.cancelable) e.preventDefault();
+                const pt = e.touches ? e.touches[0] : e;
+                const node = getPointerNode(pt.clientX, pt.clientY);
+                if (node) addPatternNode(node);
+            };
+
+            const endDraw = () => {
+                if (!isDrawingPattern) return;
+                isDrawingPattern = false;
+                verifyDrawnPattern();
+            };
+
+            wrap.addEventListener('mousedown', startDraw);
+            window.addEventListener('mousemove', moveDraw);
+            window.addEventListener('mouseup', endDraw);
+            wrap.addEventListener('touchstart', startDraw, { passive: false });
+            wrap.addEventListener('touchmove', moveDraw, { passive: false });
+            wrap.addEventListener('touchend', endDraw);
+        }
+
+        function addPatternNode(nodeId) {
+            if (!drawnPattern.includes(nodeId)) {
+                drawnPattern.push(nodeId);
+                updatePatternVisuals();
+            }
+        }
+
+        function updatePatternVisuals() {
+            const line = document.getElementById('pattern-line');
+            if (line) {
+                const pts = drawnPattern.map(id => `${NODE_COORDS[id].x},${NODE_COORDS[id].y}`).join(' ');
+                line.setAttribute('points', pts);
+            }
+            for (let i = 1; i <= 9; i++) {
+                const ring = document.getElementById(`pnode-ring-${i}`);
+                const dot = document.getElementById(`pnode-dot-${i}`);
+                if (!ring || !dot) continue;
+                if (drawnPattern.includes(i)) {
+                    ring.setAttribute('stroke', '#F94D00');
+                    ring.setAttribute('fill', '#FFF7ED');
+                    dot.setAttribute('fill', '#F94D00');
+                } else {
+                    ring.setAttribute('stroke', '#CBD5E1');
+                    ring.setAttribute('fill', '#FFFFFF');
+                    dot.setAttribute('fill', '#94A3B8');
+                }
+            }
+        }
+
+        function resetPatternDrawing() {
+            drawnPattern = [];
+            updatePatternVisuals();
+        }
+
+        function verifyDrawnPattern() {
+            if (drawnPattern.length === 0) return;
+            const isValid = drawnPattern.length === TARGET_PATTERN_W.length &&
+                drawnPattern.every((val, idx) => val === TARGET_PATTERN_W[idx]);
+
+            if (isValid) {
+                isBosUnlocked = true;
+                showToast('Pola W Benar! Mode Bos Dibuka');
+                resetPatternDrawing();
+                updateBosVisibility();
+                renderAll();
+            } else {
+                showToast('Pola salah! Coba tarik ulang');
+                setTimeout(resetPatternDrawing, 450);
+            }
+        }
+
+        function lockBosMode() {
+            isBosUnlocked = false;
+            resetPatternDrawing();
+            updateBosVisibility();
+            showToast('Mode Bos dikunci');
+        }
+
+        function updateBosVisibility() {
+            const gate = document.getElementById('bos-pattern-gate');
+            const viewBos = document.getElementById('view-bos');
+            const bottomNav = document.getElementById('bos-bottom-nav');
+            const btnLock = document.getElementById('btn-lock-bos');
+
+            if (activeRole !== 'bos') {
+                gate.classList.add('hidden');
+                viewBos.classList.add('hidden');
+                bottomNav.classList.add('hidden');
+                btnLock.classList.add('hidden');
+                return;
+            }
+
+            if (isBosUnlocked) {
+                gate.classList.add('hidden');
+                viewBos.classList.remove('hidden');
+                bottomNav.classList.remove('hidden');
+                btnLock.classList.remove('hidden');
+            } else {
+                gate.classList.remove('hidden');
+                viewBos.classList.add('hidden');
+                bottomNav.classList.add('hidden');
+                btnLock.classList.add('hidden');
+            }
+        }
+
+        // ============================================================================
+        // 4. HELPER FORMATTING & DATE UTILITIES
+        // ============================================================================
+        const formatRp = (num) => 'Rp ' + Number(num || 0).toLocaleString('id-ID');
+
+        function formatIndoDate(dateStr) {
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+            const d = new Date(dateStr + 'T00:00:00');
+            if (isNaN(d.getTime())) return dateStr;
+            return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+        }
+
+        function getRelativeBadge(dateStr) {
+            if (dateStr === '2026-11-14') return 'Hari Ini';
+            if (dateStr === '2026-11-13') return 'Kemarin';
+            if (dateStr === '2026-11-15') return 'Besok';
+            return 'Terjadwal';
+        }
+
+        function changeDate(offsetDays) {
+            const d = new Date(activeDate + 'T00:00:00');
+            d.setDate(d.getDate() + offsetDays);
+            activeDate = d.toISOString().split('T')[0];
+            if (!appState.assignments[activeDate]) {
+                appState.assignments[activeDate] = [];
+            }
+            renderAll();
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            toast.classList.remove('hidden');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => toast.classList.add('hidden'), 2600);
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function getAvatarFallback(name) {
+            const initials = encodeURIComponent((name || 'AJ').slice(0, 2).toUpperCase());
+            return `https://placehold.co/120x120/1E3A8A/FFFFFF?text=${initials}`;
+        }
+
+        function getAssignmentsForDate(dateStr) {
+            if (!appState.assignments[dateStr]) {
+                appState.assignments[dateStr] = [];
+            }
+            return appState.assignments[dateStr];
+        }
+
+        // ============================================================================
+        // 5. NAVIGATION & ROLE SWITCHER
+        // ============================================================================
+        function switchRole(role) {
+            activeRole = role;
+            const btnBos = document.getElementById('btn-mode-bos');
+            const btnWorker = document.getElementById('btn-mode-worker');
+            const viewWorker = document.getElementById('view-worker');
+
+            if (role === 'bos') {
+                btnBos.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-blue-900 text-white shadow-sm';
+                btnWorker.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
+                viewWorker.classList.add('hidden');
+                updateBosVisibility();
+                if (isBosUnlocked) renderAll();
+            } else {
+                btnWorker.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-blue-900 text-white shadow-sm';
+                btnBos.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
+                updateBosVisibility();
+                viewWorker.classList.remove('hidden');
+                renderWorkerLoginGrid();
+            }
+            lucide.createIcons();
+        }
+
+        function switchBosTab(tab) {
+            activeBosTab = tab;
+            const tabs = ['board', 'schedule', 'workers', 'kasbon', 'payroll'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`bos-tab-${t}`);
+                const nav = document.getElementById(`nav-${t}`);
+                if (el) el.classList.toggle('hidden', t !== tab);
+                if (nav) {
+                    nav.className = t === tab
+                        ? 'py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-blue-900 bg-blue-50 font-bold text-[11px] transition'
+                        : 'py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-stone-100 font-semibold text-[11px] transition';
+                }
+            });
+            renderAll();
+        }
+
+        // ============================================================================
+        // 6. TAB 1: PAPAN KERJA HARIAN (DISPATCH BOARD)
+        // ============================================================================
+        function renderWorkerPool() {
+            const container = document.getElementById('worker-pool-grid');
+            const badgeCount = document.getElementById('worker-count-badge');
+            if (badgeCount) badgeCount.textContent = appState.workers.length;
+            const dayAssignments = getAssignmentsForDate(activeDate);
+
+            if (appState.workers.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-6 text-center text-xs text-slate-400">
+                        Belum ada data tukang. Tambahkan personil melalui menu <strong>Karyawan</strong> di bawah.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = appState.workers.map(w => {
+                const assigned = dayAssignments.find(a => a.workerId === w.id);
+                const loc = assigned ? appState.locations.find(l => l.id === assigned.locationId) : null;
+                const ringClass = w.tier === 'Inti'
+                    ? 'ring-2 ring-amber-400 shadow-xs'
+                    : 'ring-2 ring-slate-300';
+
+                return `
+                    <div draggable="true"
+                         ondragstart="handleDragStart(event, '${w.id}')"
+                         ondragend="handleDragEnd(event)"
+                         onclick="openAssignModal('${w.id}')"
+                         class="worker-card cursor-pointer select-none flex flex-col items-center p-1.5 rounded-2xl border ${assigned ? 'bg-emerald-50/70 border-emerald-200' : 'bg-stone-50/80 border-stone-200/70 hover:bg-white'}">
+                        <div class="relative">
+                            <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                                 onerror="this.src='${getAvatarFallback(w.nickname)}'"
+                                 alt="${w.nickname}"
+                                 class="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover ${ringClass}">
+                            ${assigned ? `<span class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[9px] font-bold shadow-xs">✓</span>` : ''}
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-800 mt-1.5 truncate w-full text-center leading-tight">${w.nickname}</span>
+                        <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded-md mt-0.5 ${assigned ? 'bg-emerald-100 text-emerald-800 truncate max-w-full' : 'bg-stone-200/70 text-slate-600'}">
+                            ${loc ? loc.name : w.role}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderLocationsBoard() {
+            const grid = document.getElementById('locations-grid');
+            const dayAssignments = getAssignmentsForDate(activeDate);
+
+            if (appState.locations.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-white rounded-2xl border-2 border-dashed border-stone-200 p-8 text-center text-xs text-slate-400">
+                        Belum ada lokasi proyek. Klik tombol <strong>+ Proyek / Lokasi</strong> di atas untuk membuat zona kerja.
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = appState.locations.map(loc => {
+                const assignedList = dayAssignments.filter(a => a.locationId === loc.id);
+                const doneCount = (loc.tasks || []).filter(t => t.done).length;
+                const totalTasks = (loc.tasks || []).length;
+
+                return `
+                    <div class="drop-zone bg-white rounded-2xl p-4 border-2 border-dashed border-stone-300/90 shadow-xs flex flex-col justify-between space-y-4"
+                         ondragover="handleDragOver(event)"
+                         ondragleave="handleDragLeave(event)"
+                         ondrop="handleDrop(event, '${loc.id}')">
+                        <div>
+                            <!-- Header Lokasi -->
+                            <div class="flex items-start justify-between gap-2 pb-3 border-b border-stone-100">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h4 class="text-sm font-extrabold text-slate-900">${loc.name}</h4>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-900">${assignedList.length} Tukang</span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">Target selesai: ${doneCount}/${totalTasks} item</p>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="openLocationModal('${loc.id}')" class="p-1.5 rounded-lg hover:bg-stone-100 text-slate-400 hover:text-slate-700" title="Edit Lokasi">
+                                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button onclick="deleteLocation('${loc.id}')" class="p-1.5 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600" title="Hapus Lokasi">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tukang Ter-assign di Lokasi Ini -->
+                            <div class="mt-3 space-y-2">
+                                ${assignedList.length === 0 ? `
+                                    <div class="py-4 text-center rounded-xl bg-stone-50 border border-dashed border-stone-200 text-xs text-slate-400">
+                                        Tarik foto tukang ke sini atau tap foto di atas
+                                    </div>
+                                ` : assignedList.map(item => {
+                                    const w = appState.workers.find(wk => wk.id === item.workerId);
+                                    if (!w) return '';
+                                    return `
+                                        <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-stone-50 border border-stone-200/80">
+                                            <div class="flex items-center gap-2 min-w-0">
+                                                <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                                                     onerror="this.src='${getAvatarFallback(w.nickname)}'"
+                                                     class="w-8 h-8 rounded-full object-cover ring-2 ${w.tier === 'Inti' ? 'ring-amber-400' : 'ring-slate-300'} shrink-0">
+                                                <div class="min-w-0">
+                                                    <div class="text-xs font-bold text-slate-900 truncate">${w.nickname}</div>
+                                                    <div class="text-[10px] text-slate-500">${w.role} • Lembur: <strong class="text-amber-700">${item.overtimeHours || 0}j</strong></div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-1 shrink-0">
+                                                ${[1, 2, 3].map(hr => `
+                                                    <button onclick="setWorkerOvertime('${w.id}', ${item.overtimeHours === hr ? 0 : hr})"
+                                                        class="px-2 py-1 rounded-lg text-[10px] font-bold transition ${item.overtimeHours === hr ? 'bg-amber-500 text-white shadow-xs' : 'bg-white border border-stone-200 text-slate-600 hover:bg-amber-50'}">
+                                                        +${hr}j
+                                                    </button>
+                                                `).join('')}
+                                                <button onclick="removeWorkerAssignment('${w.id}')" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="Keluarkan">
+                                                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Checklist Garapan -->
+                        <div class="pt-3 border-t border-stone-100 space-y-2">
+                            <div class="text-[11px] font-bold text-slate-600">Checklist Garapan:</div>
+                            <div class="space-y-1.5">
+                                ${(loc.tasks || []).map((task, idx) => `
+                                    <label class="flex items-center gap-2 text-xs cursor-pointer select-none group">
+                                        <input type="checkbox" ${task.done ? 'checked' : ''} onchange="toggleLocationTask('${loc.id}', ${idx})"
+                                            class="w-4 h-4 rounded-md accent-blue-900 cursor-pointer">
+                                        <span class="${task.done ? 'line-through text-slate-400' : 'text-slate-700 group-hover:text-slate-950'}">${task.label}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                            <div class="flex gap-1.5 pt-1">
+                                <input type="text" id="new-task-${loc.id}" placeholder="+ Tambah target garapan..."
+                                    onkeydown="if(event.key==='Enter') addCustomTask('${loc.id}')"
+                                    class="flex-1 px-2.5 py-1.5 rounded-lg bg-stone-50 border border-stone-200 text-xs focus:outline-none focus:border-blue-900">
+                                <button onclick="addCustomTask('${loc.id}')" class="px-2.5 py-1.5 rounded-lg bg-stone-200 hover:bg-stone-300 text-xs font-bold text-slate-700">
+                                    Tambah
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Drag & Drop Handlers
+        function handleDragStart(e, workerId) {
+            draggedWorkerId = workerId;
+            e.currentTarget.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            draggedWorkerId = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleDrop(e, locationId) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            if (draggedWorkerId) {
+                assignWorkerToLocation(draggedWorkerId, locationId);
+            }
+        }
+
+        function openAssignModal(workerId) {
+            selectedWorkerForAssign = workerId;
+            const w = appState.workers.find(wk => wk.id === workerId);
+            if (!w) return;
+            document.getElementById('assign-modal-avatar').src = w.avatar || getAvatarFallback(w.nickname);
+            document.getElementById('assign-modal-name').textContent = w.nickname;
+            document.getElementById('assign-modal-role').textContent = `${w.role} • Pilih penempatan tanggal ${formatIndoDate(activeDate)}`;
+
+            const locBox = document.getElementById('assign-modal-locations');
+            if (appState.locations.length === 0) {
+                locBox.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">Belum ada lokasi proyek. Tambahkan lokasi terlebih dahulu.</div>`;
+            } else {
+                const dayAssignments = getAssignmentsForDate(activeDate);
+                const current = dayAssignments.find(a => a.workerId === workerId);
+                locBox.innerHTML = appState.locations.map(loc => `
+                    <button onclick="assignWorkerToLocation('${workerId}', '${loc.id}'); closeModal('modal-assign');"
+                        class="w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition ${current && current.locationId === loc.id ? 'bg-blue-50 border-blue-900 text-blue-950 font-bold' : 'bg-stone-50 hover:bg-stone-100 border-stone-200 text-slate-800 font-semibold'}">
+                        <span class="text-sm">${loc.name}</span>
+                        <span class="text-xs text-slate-400">${current && current.locationId === loc.id ? 'Aktif' : 'Pilih →'}</span>
+                    </button>
+                `).join('') + (current ? `
+                    <button onclick="removeWorkerAssignment('${workerId}'); closeModal('modal-assign');"
+                        class="w-full p-3 rounded-2xl bg-rose-50 text-rose-700 text-xs font-bold mt-2">
+                        Batalkan Penugasan Hari Ini
+                    </button>
+                ` : '');
+            }
+            openModal('modal-assign');
+        }
+
+        function assignWorkerToLocation(workerId, locationId, dateTarget = activeDate, overtimeHours = null) {
+            const list = getAssignmentsForDate(dateTarget);
+            const existingIdx = list.findIndex(a => a.workerId === workerId);
+            if (existingIdx > -1) {
+                list[existingIdx].locationId = locationId;
+                if (overtimeHours !== null) list[existingIdx].overtimeHours = overtimeHours;
+            } else {
+                list.push({
+                    workerId,
+                    locationId,
+                    overtimeHours: overtimeHours !== null ? overtimeHours : 0
+                });
+            }
+            SupabaseService.saveState(appState);
+            SupabaseService.syncAssignment(dateTarget, workerId, locationId, overtimeHours || 0);
+            renderAll();
+            const w = appState.workers.find(wk => wk.id === workerId);
+            const loc = appState.locations.find(l => l.id === locationId);
+            if (w && loc) showToast(`${w.nickname} masuk ke ${loc.name}`);
+        }
+
+        function removeWorkerAssignment(workerId, dateTarget = activeDate) {
+            const list = getAssignmentsForDate(dateTarget);
+            appState.assignments[dateTarget] = list.filter(a => a.workerId !== workerId);
+            SupabaseService.saveState(appState);
+            SupabaseService.removeAssignment(dateTarget, workerId);
+            renderAll();
+            showToast('Penugasan dibatalkan');
+        }
+
+        function setWorkerOvertime(workerId, hours) {
+            const list = getAssignmentsForDate(activeDate);
+            const item = list.find(a => a.workerId === workerId);
+            if (item) {
+                item.overtimeHours = hours;
+                SupabaseService.saveState(appState);
+                SupabaseService.syncAssignment(activeDate, workerId, item.locationId, hours);
+                renderAll();
+                showToast(hours > 0 ? `Lembur +${hours} jam dicatat` : 'Lembur direset');
+            }
+        }
+
+        function toggleLocationTask(locId, taskIdx) {
+            const loc = appState.locations.find(l => l.id === locId);
+            if (loc && loc.tasks[taskIdx]) {
+                loc.tasks[taskIdx].done = !loc.tasks[taskIdx].done;
+                SupabaseService.saveState(appState);
+                renderLocationsBoard();
+            }
+        }
+
+        function addCustomTask(locId) {
+            const input = document.getElementById(`new-task-${locId}`);
+            const val = input.value.trim();
+            if (!val) return;
+            const loc = appState.locations.find(l => l.id === locId);
+            if (loc) {
+                loc.tasks.push({ label: val, done: false });
+                input.value = '';
+                SupabaseService.saveState(appState);
+                renderLocationsBoard();
+                showToast('Target garapan ditambahkan');
+            }
+        }
+
+        function copyYesterdayDispatch() {
+            const d = new Date(activeDate + 'T00:00:00');
+            d.setDate(d.getDate() - 1);
+            const yStr = d.toISOString().split('T')[0];
+            const prev = appState.assignments[yStr] || [];
+            if (prev.length === 0) {
+                showToast('Tidak ada jadwal di hari sebelumnya');
+                return;
+            }
+            appState.assignments[activeDate] = prev.map(item => ({
+                workerId: item.workerId,
+                locationId: item.locationId,
+                overtimeHours: 0
+            }));
+            SupabaseService.saveState(appState);
+            renderAll();
+            showToast(`Menyalin ${prev.length} penugasan dari kemarin`);
+        }
+
+        // Location Modal CRUD
+        function openLocationModal(locId = null) {
+            document.getElementById('edit-loc-id').value = locId || '';
+            if (locId) {
+                const loc = appState.locations.find(l => l.id === locId);
+                document.getElementById('modal-location-title').textContent = 'Edit Lokasi Proyek';
+                document.getElementById('input-loc-name').value = loc ? loc.name : '';
+                document.getElementById('input-loc-tasks').value = loc ? loc.tasks.map(t => t.label).join(', ') : '';
+            } else {
+                document.getElementById('modal-location-title').textContent = 'Tambah Lokasi Proyek';
+                document.getElementById('input-loc-name').value = '';
+                document.getElementById('input-loc-tasks').value = '';
+            }
+            openModal('modal-location');
+        }
+
+        function saveLocationModal() {
+            const id = document.getElementById('edit-loc-id').value;
+            const name = document.getElementById('input-loc-name').value.trim();
+            const tasksRaw = document.getElementById('input-loc-tasks').value.trim();
+            if (!name) {
+                showToast('Nama lokasi wajib diisi');
+                return;
+            }
+            const parsedTasks = tasksRaw
+                ? tasksRaw.split(',').map(s => s.trim()).filter(Boolean).map(label => ({ label, done: false }))
+                : [{ label: 'Pekerjaan Umum', done: false }];
+
+            if (id) {
+                const loc = appState.locations.find(l => l.id === id);
+                if (loc) {
+                    loc.name = name;
+                    loc.tasks = parsedTasks;
+                }
+            } else {
+                appState.locations.push({
+                    id: 'loc_' + Date.now(),
+                    name,
+                    tasks: parsedTasks
+                });
+            }
+            SupabaseService.saveState(appState);
+            closeModal('modal-location');
+            renderAll();
+            showToast('Lokasi proyek tersimpan');
+        }
+
+        function deleteLocation(locId) {
+            appState.locations = appState.locations.filter(l => l.id !== locId);
+            Object.keys(appState.assignments).forEach(dateKey => {
+                appState.assignments[dateKey] = appState.assignments[dateKey].filter(a => a.locationId !== locId);
+            });
+            SupabaseService.saveState(appState);
+            renderAll();
+            showToast('Lokasi dihapus');
+        }
+
+        // ============================================================================
+        // 7. TAB 2: KASBON & REKAP HARIAN
+        // ============================================================================
+        function renderKasbonAndLogs() {
+            let totalKasbon = 0;
+            let totalWeeklyDeduct = 0;
+            appState.workers.forEach(w => {
+                totalKasbon += Number(w.kasbonBalance || 0);
+                totalWeeklyDeduct += Math.min(Number(w.kasbonBalance || 0), Number(w.weeklyDeduction || 0));
+            });
+
+            document.getElementById('stat-total-kasbon').textContent = formatRp(totalKasbon);
+            document.getElementById('stat-weekly-deduct').textContent = formatRp(totalWeeklyDeduct);
+
+            const container = document.getElementById('kasbon-list-container');
+            if (appState.workers.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Belum ada data tukang.</div>`;
+            } else {
+                container.innerHTML = appState.workers.map(w => `
+                    <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                                 onerror="this.src='${getAvatarFallback(w.nickname)}'"
+                                 class="w-10 h-10 rounded-full object-cover ring-2 ${w.tier === 'Inti' ? 'ring-amber-400' : 'ring-slate-300'}">
+                            <div>
+                                <div class="text-sm font-bold text-slate-900">${w.nickname} <span class="text-xs font-normal text-slate-400">(${w.role})</span></div>
+                                <div class="text-xs text-slate-500">Sisa Pinjaman: <strong class="${w.kasbonBalance > 0 ? 'text-amber-700' : 'text-emerald-700'}">${formatRp(w.kasbonBalance || 0)}</strong></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="text-right">
+                                <label class="block text-[10px] font-bold text-slate-400 uppercase">Potongan Sabtu</label>
+                                <input type="number" step="25000" value="${w.weeklyDeduction || 0}"
+                                    onchange="updateWorkerDeduction('${w.id}', this.value)"
+                                    class="w-28 px-2.5 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-right focus:outline-none focus:border-blue-900">
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            renderLogsSection();
+        }
+
+        function renderLogsSection() {
+            const filterDate = document.getElementById('log-filter-date').value;
+            const container = document.getElementById('attendance-logs-container');
+            const entries = [];
+
+            Object.entries(appState.assignments).forEach(([dateStr, list]) => {
+                if (filterDate !== 'ALL' && dateStr !== filterDate) return;
+                list.forEach(item => {
+                    const w = appState.workers.find(wk => wk.id === item.workerId);
+                    const loc = appState.locations.find(l => l.id === item.locationId);
+                    if (w) {
+                        entries.push({
+                            dateStr,
+                            worker: w,
+                            locationName: loc ? loc.name : 'Lokasi Dihapus',
+                            overtimeHours: item.overtimeHours || 0
+                        });
+                    }
+                });
+            });
+
+            entries.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
+
+            if (entries.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Belum ada log kehadiran pada periode ini.</div>`;
+                return;
+            }
+
+            container.innerHTML = entries.map(e => `
+                <div class="p-3.5 flex items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2.5">
+                        <span class="px-2 py-1 rounded-lg bg-stone-100 font-bold text-slate-700">${formatIndoDate(e.dateStr)}</span>
+                        <span class="font-bold text-slate-900">${e.worker.nickname}</span>
+                        <span class="text-slate-400">→</span>
+                        <span class="font-semibold text-blue-900">${e.locationName}</span>
+                    </div>
+                    <div class="font-bold ${e.overtimeHours > 0 ? 'text-amber-600' : 'text-slate-400'}">
+                        ${e.overtimeHours > 0 ? `Lembur +${e.overtimeHours}j` : 'Normal'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openKasbonModal() {
+            const select = document.getElementById('kasbon-worker-select');
+            if (appState.workers.length === 0) {
+                showToast('Tambahkan data tukang terlebih dahulu');
+                return;
+            }
+            select.innerHTML = appState.workers.map(w => `<option value="${w.id}">${w.nickname} (${w.name})</option>`).join('');
+            document.getElementById('kasbon-amount').value = '';
+            document.getElementById('kasbon-deduction').value = '50000';
+            openModal('modal-kasbon');
+        }
+
+        function saveKasbonModal() {
+            const workerId = document.getElementById('kasbon-worker-select').value;
+            const amount = Number(document.getElementById('kasbon-amount').value || 0);
+            const deduction = Number(document.getElementById('kasbon-deduction').value || 0);
+            if (amount <= 0) {
+                showToast('Masukkan nominal pinjaman valid');
+                return;
+            }
+            const w = appState.workers.find(wk => wk.id === workerId);
+            if (w) {
+                w.kasbonBalance = Number(w.kasbonBalance || 0) + amount;
+                if (deduction > 0) w.weeklyDeduction = deduction;
+                SupabaseService.saveState(appState);
+                SupabaseService.recordKasbon(workerId, amount);
+                closeModal('modal-kasbon');
+                renderAll();
+                showToast(`Kasbon ${formatRp(amount)} dicatat untuk ${w.nickname}`);
+            }
+        }
+
+        function updateWorkerDeduction(workerId, val) {
+            const w = appState.workers.find(wk => wk.id === workerId);
+            if (w) {
+                w.weeklyDeduction = Math.max(0, Number(val || 0));
+                SupabaseService.saveState(appState);
+                renderKasbonAndLogs();
+                showToast('Nominal cicilan mingguan diperbarui');
+            }
+        }
+
+        // ============================================================================
+        // 8. TAB 3: AUTO-PAYROLL SABTU
+        // ============================================================================
+        function calculateWorkerWeeklyPay(worker) {
+            let daysWorked = 0;
+            let totalOvertime = 0;
+
+            Object.values(appState.assignments).forEach(dayList => {
+                const found = dayList.find(a => a.workerId === worker.id);
+                if (found) {
+                    daysWorked += 1;
+                    totalOvertime += Number(found.overtimeHours || 0);
+                }
+            });
+
+            const basePay = daysWorked * Number(worker.dailyRate || 0);
+            const overtimePay = totalOvertime * Number(worker.overtimeRate || 0);
+            const grossPay = basePay + overtimePay;
+            const kasbonCut = Math.min(Number(worker.kasbonBalance || 0), Number(worker.weeklyDeduction || 0), grossPay);
+            const netPay = Math.max(0, grossPay - kasbonCut);
+
+            return { daysWorked, totalOvertime, basePay, overtimePay, grossPay, kasbonCut, netPay };
+        }
+
+        function renderPayroll() {
+            const container = document.getElementById('payroll-cards-container');
+            let grandTotal = 0;
+            let paidCount = 0;
+
+            if (appState.workers.length === 0) {
+                document.getElementById('payroll-grand-total').textContent = 'Rp 0';
+                document.getElementById('payroll-paid-status').textContent = '0 dari 0 tukang sudah dibayar';
+                container.innerHTML = `<div class="col-span-full bg-white rounded-2xl border border-stone-200 p-8 text-center text-xs text-slate-400">Belum ada data tukang untuk dihitung gajinya.</div>`;
+                return;
+            }
+
+            container.innerHTML = appState.workers.map(w => {
+                const calc = calculateWorkerWeeklyPay(w);
+                grandTotal += calc.netPay;
+                if (w.isPaidThisWeek) paidCount++;
+
+                return `
+                    <div class="bg-white rounded-2xl p-4 border ${w.isPaidThisWeek ? 'border-emerald-300 bg-emerald-50/30' : 'border-stone-200'} shadow-xs space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2.5">
+                                <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                                     onerror="this.src='${getAvatarFallback(w.nickname)}'"
+                                     class="w-10 h-10 rounded-full object-cover ring-2 ${w.tier === 'Inti' ? 'ring-amber-400' : 'ring-slate-300'}">
+                                <div>
+                                    <h4 class="text-sm font-extrabold text-slate-900">${w.nickname}</h4>
+                                    <p class="text-[11px] text-slate-500">${w.role} • ${calc.daysWorked} Hari + ${calc.totalOvertime}j Lembur</p>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${w.isPaidThisWeek ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                ${w.isPaidThisWeek ? 'SUDAH DIBAYAR' : 'BELUM DIBAYAR'}
+                            </span>
+                        </div>
+
+                        <div class="bg-stone-50 rounded-xl p-3 space-y-1 text-xs">
+                            <div class="flex justify-between text-slate-600">
+                                <span>Upah Pokok (${calc.daysWorked} × ${formatRp(w.dailyRate)})</span>
+                                <span class="font-semibold">${formatRp(calc.basePay)}</span>
+                            </div>
+                            <div class="flex justify-between text-slate-600">
+                                <span>Lembur (${calc.totalOvertime}j × ${formatRp(w.overtimeRate)})</span>
+                                <span class="font-semibold text-amber-700">+ ${formatRp(calc.overtimePay)}</span>
+                            </div>
+                            <div class="flex justify-between text-rose-600">
+                                <span>Potongan Kasbon</span>
+                                <span class="font-semibold">- ${formatRp(calc.kasbonCut)}</span>
+                            </div>
+                            <div class="pt-1.5 mt-1.5 border-t border-stone-200 flex justify-between text-sm font-extrabold text-slate-900">
+                                <span>Gaji Bersih Diterima</span>
+                                <span class="text-emerald-700">${formatRp(calc.netPay)}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button onclick="togglePaidStatus('${w.id}')"
+                                class="flex-1 py-2.5 rounded-xl text-xs font-bold transition ${w.isPaidThisWeek ? 'bg-stone-200 text-slate-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}">
+                                ${w.isPaidThisWeek ? 'Batalkan Status Lunas' : 'Tandai Sudah Dibayar'}
+                            </button>
+                            <button onclick="copySingleSlipWA('${w.id}')"
+                                class="px-3 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-slate-700 text-xs font-bold flex items-center gap-1" title="Salin Slip WA">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                <span>Slip WA</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('payroll-grand-total').textContent = formatRp(grandTotal);
+            document.getElementById('payroll-paid-status').textContent = `${paidCount} dari ${appState.workers.length} tukang sudah dibayar`;
+        }
+
+        function togglePaidStatus(workerId) {
+            const w = appState.workers.find(wk => wk.id === workerId);
+            if (!w) return;
+            const calc = calculateWorkerWeeklyPay(w);
+            if (!w.isPaidThisWeek) {
+                w.isPaidThisWeek = true;
+                w.kasbonBalance = Math.max(0, Number(w.kasbonBalance || 0) - calc.kasbonCut);
+                showToast(`Gaji ${w.nickname} ditandai sudah dibayar`);
+            } else {
+                w.isPaidThisWeek = false;
+                w.kasbonBalance = Number(w.kasbonBalance || 0) + calc.kasbonCut;
+                showToast(`Status pembayaran ${w.nickname} dibatalkan`);
+            }
+            SupabaseService.saveState(appState);
+            renderAll();
+        }
+
+        function copyTextToClipboard(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
+
+        function copySingleSlipWA(workerId) {
+            const w = appState.workers.find(wk => wk.id === workerId);
+            if (!w) return;
+            const c = calculateWorkerWeeklyPay(w);
+            const slip = `*SLIP GAJI MINGGUAN — ADI JAYA*\nNama: ${w.name} (${w.nickname})\nMasuk: ${c.daysWorked} Hari (${formatRp(c.basePay)})\nLembur: ${c.totalOvertime} Jam (${formatRp(c.overtimePay)})\nPotongan Kasbon: -${formatRp(c.kasbonCut)}\n*TOTAL DITERIMA: ${formatRp(c.netPay)}*\nSisa Kasbon: ${formatRp(w.kasbonBalance || 0)}`;
+            copyTextToClipboard(slip);
+            showToast(`Slip WA ${w.nickname} disalin`);
+        }
+
+        function copyAllPayrollWhatsApp() {
+            if (appState.workers.length === 0) return;
+            let total = 0;
+            const lines = appState.workers.map((w, i) => {
+                const c = calculateWorkerWeeklyPay(w);
+                total += c.netPay;
+                return `${i + 1}. ${w.nickname}: *${formatRp(c.netPay)}* (${c.daysWorked}h, +${c.totalOvertime}j)`;
+            });
+            const msg = `*REKAP GAJIAN SABTU — ADI JAYA*\n\n${lines.join('\n')}\n\n*TOTAL PENCAIRAN: ${formatRp(total)}*`;
+            copyTextToClipboard(msg);
+            showToast('Rekap gajian WA berhasil disalin');
+        }
+
+        // ============================================================================
+        // 9. TAB 4: JADWAL SCHEDULE (PER TANGGAL)
+        // ============================================================================
+        function onScheduleDateChange(val) {
+            if (!val) return;
+            activeScheduleDate = val;
+            renderScheduleTab();
+        }
+
+        function renderScheduleTab() {
+            const picker = document.getElementById('schedule-date-picker');
+            if (picker) picker.value = activeScheduleDate;
+            document.getElementById('schedule-selected-title').textContent = formatIndoDate(activeScheduleDate);
+
+            // Render 7-day strip around activeScheduleDate
+            const strip = document.getElementById('schedule-week-strip');
+            const base = new Date(activeScheduleDate + 'T00:00:00');
+            const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+            let stripHtml = '';
+            for (let i = -3; i <= 3; i++) {
+                const d = new Date(base);
+                d.setDate(base.getDate() + i);
+                const iso = d.toISOString().split('T')[0];
+                const count = (appState.assignments[iso] || []).length;
+                const isSelected = iso === activeScheduleDate;
+                stripHtml += `
+                    <button onclick="onScheduleDateChange('${iso}')"
+                        class="p-2 rounded-2xl border text-center transition ${isSelected ? 'bg-blue-900 text-white border-blue-900 shadow-xs' : 'bg-white text-slate-700 border-stone-200 hover:bg-stone-50'}">
+                        <div class="text-[10px] font-semibold ${isSelected ? 'text-blue-200' : 'text-slate-400'}">${dayNames[d.getDay()]}</div>
+                        <div class="text-sm font-extrabold mt-0.5">${d.getDate()}</div>
+                        <div class="text-[9px] font-bold mt-1 px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-stone-100 text-slate-500'}">${count} org</div>
+                    </button>
+                `;
+            }
+            strip.innerHTML = stripHtml;
+
+            const listContainer = document.getElementById('schedule-list-container');
+            const list = getAssignmentsForDate(activeScheduleDate);
+
+            if (list.length === 0) {
+                listContainer.innerHTML = `<div class="p-8 text-center text-xs text-slate-400">Belum ada jadwal penugasan pada tanggal ini. Klik <strong>+ Tambah Jadwal</strong>.</div>`;
+                return;
+            }
+
+            listContainer.innerHTML = list.map(item => {
+                const w = appState.workers.find(wk => wk.id === item.workerId);
+                const loc = appState.locations.find(l => l.id === item.locationId);
+                if (!w) return '';
+                return `
+                    <div class="p-4 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                                 onerror="this.src='${getAvatarFallback(w.nickname)}'"
+                                 class="w-10 h-10 rounded-full object-cover ring-2 ${w.tier === 'Inti' ? 'ring-amber-400' : 'ring-slate-300'}">
+                            <div>
+                                <div class="text-sm font-bold text-slate-900">${w.nickname} <span class="text-xs font-normal text-slate-400">(${w.role})</span></div>
+                                <div class="text-xs font-semibold text-blue-900">${loc ? loc.name : 'Lokasi Tidak Ditemukan'} • Lembur: ${item.overtimeHours || 0}j</div>
+                            </div>
+                        </div>
+                        <button onclick="removeWorkerAssignment('${w.id}', '${activeScheduleDate}')"
+                            class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold">
+                            Hapus
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openScheduleAddModal() {
+            if (appState.workers.length === 0 || appState.locations.length === 0) {
+                showToast('Pastikan data tukang & lokasi proyek sudah diisi');
+                return;
+            }
+            document.getElementById('sched-modal-date').value = activeScheduleDate;
+            document.getElementById('sched-modal-worker').innerHTML = appState.workers.map(w =>
+                `<option value="${w.id}">${w.nickname} (${w.role})</option>`
+            ).join('');
+            document.getElementById('sched-modal-location').innerHTML = appState.locations.map(l =>
+                `<option value="${l.id}">${l.name}</option>`
+            ).join('');
+            document.getElementById('sched-modal-overtime').value = '0';
+            openModal('modal-schedule');
+        }
+
+        function saveScheduleModal() {
+            const dateVal = document.getElementById('sched-modal-date').value;
+            const workerId = document.getElementById('sched-modal-worker').value;
+            const locationId = document.getElementById('sched-modal-location').value;
+            const overtime = Number(document.getElementById('sched-modal-overtime').value || 0);
+            if (!dateVal || !workerId || !locationId) return;
+
+            activeScheduleDate = dateVal;
+            assignWorkerToLocation(workerId, locationId, dateVal, overtime);
+            closeModal('modal-schedule');
+            renderScheduleTab();
+        }
+
+        function jumpScheduleToBoard() {
+            activeDate = activeScheduleDate;
+            switchBosTab('board');
+        }
+
+        // ============================================================================
+        // 10. TAB 5: EDIT & KELOLA DATA KARYAWAN
+        // ============================================================================
+        function renderWorkersManagement() {
+            const grid = document.getElementById('workers-management-grid');
+            if (!grid) return;
+
+            if (appState.workers.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-white rounded-2xl border border-stone-200 p-8 text-center text-xs text-slate-400">
+                        Belum ada karyawan terdaftar. Klik <strong>Tambah Tukang Baru</strong> di atas.
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = appState.workers.map(w => `
+                <div class="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                             onerror="this.src='${getAvatarFallback(w.nickname)}'"
+                             class="w-12 h-12 rounded-full object-cover ring-2 ${w.tier === 'Inti' ? 'ring-amber-400' : 'ring-slate-300'} shrink-0">
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5">
+                                <h4 class="text-sm font-extrabold text-slate-900 truncate">${w.nickname}</h4>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${w.tier === 'Inti' ? 'bg-amber-100 text-amber-800' : 'bg-stone-100 text-slate-600'}">
+                                    ${w.tier}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-500 truncate">${w.name} • ${w.role}</p>
+                            <p class="text-[11px] font-semibold text-blue-900 mt-0.5">${formatRp(w.dailyRate)}/hr • Lembur ${formatRp(w.overtimeRate)}/j</p>
+                        </div>
+                    </div>
+                    <button onclick="openWorkerEditModal('${w.id}')"
+                        class="px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-blue-900 hover:text-white text-slate-700 text-xs font-bold transition shrink-0">
+                        Edit
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function openWorkerEditModal(workerId = null) {
+            const btnDelete = document.getElementById('btn-delete-worker');
+            document.getElementById('edit-worker-id').value = workerId || '';
+
+            if (workerId) {
+                const w = appState.workers.find(wk => wk.id === workerId);
+                document.getElementById('modal-worker-title').textContent = 'Edit Data Tukang';
+                document.getElementById('edit-worker-name').value = w.name || '';
+                document.getElementById('edit-worker-nickname').value = w.nickname || '';
+                document.getElementById('edit-worker-role').value = w.role || 'Las';
+                document.getElementById('edit-worker-tier').value = w.tier || 'Rolling';
+                document.getElementById('edit-worker-daily').value = w.dailyRate || 140000;
+                document.getElementById('edit-worker-overtime').value = w.overtimeRate || 20000;
+                document.getElementById('edit-worker-pin').value = w.pin || '1234';
+                document.getElementById('edit-worker-avatar').value = w.avatar || '';
+                btnDelete.classList.remove('hidden');
+            } else {
+                document.getElementById('modal-worker-title').textContent = 'Tambah Tukang Baru';
+                document.getElementById('edit-worker-name').value = '';
+                document.getElementById('edit-worker-nickname').value = '';
+                document.getElementById('edit-worker-role').value = 'Las';
+                document.getElementById('edit-worker-tier').value = 'Rolling';
+                document.getElementById('edit-worker-daily').value = 140000;
+                document.getElementById('edit-worker-overtime').value = 20000;
+                document.getElementById('edit-worker-pin').value = '1234';
+                document.getElementById('edit-worker-avatar').value = '';
+                btnDelete.classList.add('hidden');
+            }
+            openModal('modal-worker-edit');
+        }
+
+        function saveWorkerEditModal() {
+            const id = document.getElementById('edit-worker-id').value;
+            const name = document.getElementById('edit-worker-name').value.trim();
+            const nickname = document.getElementById('edit-worker-nickname').value.trim();
+            const role = document.getElementById('edit-worker-role').value;
+            const tier = document.getElementById('edit-worker-tier').value;
+            const dailyRate = Number(document.getElementById('edit-worker-daily').value || 140000);
+            const overtimeRate = Number(document.getElementById('edit-worker-overtime').value || 20000);
+            const pin = document.getElementById('edit-worker-pin').value.trim() || '1234';
+            const avatar = document.getElementById('edit-worker-avatar').value.trim();
+
+            if (!name || !nickname) {
+                showToast('Nama lengkap & panggilan wajib diisi');
+                return;
+            }
+
+            if (id) {
+                const w = appState.workers.find(wk => wk.id === id);
+                if (w) {
+                    Object.assign(w, { name, nickname, role, tier, dailyRate, overtimeRate, pin, avatar });
+                }
+                showToast(`Data ${nickname} diperbarui`);
+            } else {
+                appState.workers.push({
+                    id: 'w_' + Date.now(),
+                    name,
+                    nickname,
+                    role,
+                    tier,
+                    dailyRate,
+                    overtimeRate,
+                    pin,
+                    avatar,
+                    kasbonBalance: 0,
+                    weeklyDeduction: 0,
+                    isPaidThisWeek: false
+                });
+                showToast(`${nickname} berhasil ditambahkan`);
+            }
+
+            SupabaseService.saveState(appState);
+            closeModal('modal-worker-edit');
+            renderAll();
+        }
+
+        function deleteWorkerFromModal() {
+            const id = document.getElementById('edit-worker-id').value;
+            if (!id) return;
+            appState.workers = appState.workers.filter(w => w.id !== id);
+            Object.keys(appState.assignments).forEach(dateKey => {
+                appState.assignments[dateKey] = appState.assignments[dateKey].filter(a => a.workerId !== id);
+            });
+            SupabaseService.saveState(appState);
+            closeModal('modal-worker-edit');
+            renderAll();
+            showToast('Data tukang dihapus');
+        }
+
+        // ============================================================================
+        // 11. MODE KARYAWAN (HP TUKANG)
+        // ============================================================================
+        function renderWorkerLoginGrid() {
+            if (loggedInWorkerId) {
+                renderWorkerDashboard(loggedInWorkerId);
+                return;
+            }
+            document.getElementById('worker-login-screen').classList.remove('hidden');
+            document.getElementById('worker-pin-screen').classList.add('hidden');
+            document.getElementById('worker-dashboard-screen').classList.add('hidden');
+
+            const grid = document.getElementById('worker-login-grid');
+            if (appState.workers.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-3 bg-white rounded-2xl border border-stone-200 p-6 text-center text-xs text-slate-400">
+                        Belum ada profil karyawan yang ditambahkan oleh Bos.
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = appState.workers.map(w => `
+                <button onclick="selectWorkerForPin('${w.id}')"
+                    class="bg-white rounded-2xl p-3 border border-stone-200 shadow-xs flex flex-col items-center text-center hover:border-blue-900 transition active:scale-95">
+                    <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                         onerror="this.src='${getAvatarFallback(w.nickname)}'"
+                         class="w-16 h-16 rounded-full object-cover ring-2 ${w.tier === 'Inti' ? 'ring-amber-400' : 'ring-slate-300'}">
+                    <span class="text-xs font-extrabold text-slate-900 mt-2 truncate w-full">${w.nickname}</span>
+                    <span class="text-[10px] text-slate-500">${w.role}</span>
+                </button>
+            `).join('');
+        }
+
+        function selectWorkerForPin(workerId) {
+            const w = appState.workers.find(wk => wk.id === workerId);
+            if (!w) return;
+            pinTargetWorkerId = workerId;
+            enteredPin = '';
+            updatePinDots();
+            document.getElementById('pin-worker-avatar').src = w.avatar || getAvatarFallback(w.nickname);
+            document.getElementById('pin-worker-name').textContent = w.nickname;
+            document.getElementById('worker-login-screen').classList.add('hidden');
+            document.getElementById('worker-pin-screen').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function cancelWorkerPin() {
+            pinTargetWorkerId = null;
+            enteredPin = '';
+            renderWorkerLoginGrid();
+        }
+
+        function enterPinDigit(digit) {
+            if (enteredPin.length >= 4) return;
+            enteredPin += digit;
+            updatePinDots();
+            if (enteredPin.length === 4) {
+                const w = appState.workers.find(wk => wk.id === pinTargetWorkerId);
+                if (w && enteredPin === String(w.pin || '1234')) {
+                    loggedInWorkerId = w.id;
+                    renderWorkerDashboard(w.id);
+                    showToast(`Selamat bekerja, ${w.nickname}!`);
+                } else {
+                    showToast('PIN salah! Silakan ulangi');
+                    setTimeout(() => {
+                        enteredPin = '';
+                        updatePinDots();
+                    }, 350);
+                }
+            }
+        }
+
+        function clearPin() {
+            enteredPin = '';
+            updatePinDots();
+        }
+
+        function updatePinDots() {
+            const dots = document.querySelectorAll('#pin-dots span');
+            dots.forEach((dot, idx) => {
+                dot.className = idx < enteredPin.length
+                    ? 'w-3.5 h-3.5 rounded-full bg-blue-900 scale-110 transition'
+                    : 'w-3.5 h-3.5 rounded-full bg-stone-200 transition';
+            });
+        }
+
+        function renderWorkerDashboard(workerId) {
+            const w = appState.workers.find(wk => wk.id === workerId);
+            if (!w) {
+                logoutWorker();
+                return;
+            }
+            document.getElementById('worker-login-screen').classList.add('hidden');
+            document.getElementById('worker-pin-screen').classList.add('hidden');
+            document.getElementById('worker-dashboard-screen').classList.remove('hidden');
+
+            document.getElementById('wd-avatar').src = w.avatar || getAvatarFallback(w.nickname);
+            document.getElementById('wd-name').textContent = w.nickname;
+            document.getElementById('wd-tier-badge').textContent = w.tier.toUpperCase();
+            document.getElementById('wd-role').textContent = `Spesialis ${w.role} • Rate ${formatRp(w.dailyRate)}/hari`;
+            document.getElementById('wd-today-date').textContent = formatIndoDate(activeDate);
+
+            const todayList = getAssignmentsForDate(activeDate);
+            const myAssignment = todayList.find(a => a.workerId === w.id);
+            const locBox = document.getElementById('wd-location-box');
+
+            if (myAssignment) {
+                const loc = appState.locations.find(l => l.id === myAssignment.locationId);
+                const tasks = loc ? loc.tasks : [];
+                locBox.innerHTML = `
+                    <div class="text-base font-extrabold text-blue-950">${loc ? loc.name : 'Lokasi Proyek'}</div>
+                    <div class="text-xs text-blue-800 mt-0.5">Status: <strong>Hadir Terjadwal</strong> • Lembur Hari Ini: <strong>+${myAssignment.overtimeHours || 0} Jam</strong></div>
+                    ${tasks.length > 0 ? `
+                        <div class="mt-3 pt-2.5 border-t border-blue-200/70 space-y-1">
+                            <div class="text-[11px] font-bold text-blue-900">Target Garapan Lokasi:</div>
+                            ${tasks.map(t => `
+                                <div class="text-xs flex items-center gap-1.5 ${t.done ? 'line-through text-slate-400' : 'text-slate-800'}">
+                                    <span>${t.done ? '✅' : '🔸'}</span>
+                                    <span>${t.label}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                `;
+            } else {
+                locBox.innerHTML = `
+                    <div class="text-sm font-bold text-slate-700">Belum Ada Penempatan Hari Ini</div>
+                    <p class="text-xs text-slate-500 mt-1">Silakan konfirmasi ke Bos untuk penempatan lokasi kerja hari ini.</p>
+                `;
+            }
+
+            const calc = calculateWorkerWeeklyPay(w);
+            document.getElementById('wd-net-pay').textContent = formatRp(calc.netPay);
+            document.getElementById('wd-days-count').textContent = `${calc.daysWorked} Hari`;
+            document.getElementById('wd-ot-hours').textContent = `${calc.totalOvertime} Jam`;
+            document.getElementById('wd-kasbon-rem').textContent = formatRp(w.kasbonBalance || 0);
+            lucide.createIcons();
+        }
+
+        function logoutWorker() {
+            loggedInWorkerId = null;
+            pinTargetWorkerId = null;
+            enteredPin = '';
+            renderWorkerLoginGrid();
+        }
+
+        function resetDemoData() {
+            appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+            SupabaseService.saveState(appState);
+            closeModal('modal-supabase');
+            renderAll();
+            showToast('Seluruh data dikosongkan');
+        }
+
+        // ============================================================================
+        // 12. MASTER RENDER & BOOTSTRAP
+        // ============================================================================
+        function renderAll() {
+            document.getElementById('date-badge').textContent = getRelativeBadge(activeDate);
+            document.getElementById('active-date-display').textContent = formatIndoDate(activeDate);
+            const assignedToday = getAssignmentsForDate(activeDate).length;
+            document.getElementById('daily-presence-summary').textContent = `${assignedToday} dari ${appState.workers.length} tukang ditugaskan`;
+
+            renderWorkerPool();
+            renderLocationsBoard();
+            renderKasbonAndLogs();
+            renderPayroll();
+            renderScheduleTab();
+            renderWorkersManagement();
+            lucide.createIcons();
+        }
+
+        window.onload = function () {
+            initPatternLock();
+            updateBosVisibility();
+            renderAll();
+        };
+    </script>
+</body>
+</html>
