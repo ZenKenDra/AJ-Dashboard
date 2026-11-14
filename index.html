@@ -408,6 +408,11 @@
                 <div class="flex items-center gap-2">
                     <input type="date" id="attendance-check-date" value="2026-11-14" onchange="renderAttendanceCheckTab(this.value)"
                         class="px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-900">
+                    <button id="btn-clear-all-photos" onclick="clearAllAttendancePhotosForDate()"
+                        class="hidden px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 text-xs font-bold flex items-center gap-1 transition active:scale-95">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>Hapus Semua</span>
+                    </button>
                 </div>
             </div>
 
@@ -573,6 +578,11 @@
                     <div id="wd-photo-result-box" class="hidden space-y-2.5">
                         <div class="relative rounded-2xl overflow-hidden border border-emerald-200 aspect-[4/3] bg-stone-100">
                             <img id="wd-captured-img" src="" alt="Bukti Absen" class="w-full h-full object-cover">
+                            <button onclick="deleteOwnAttendancePhoto()" title="Hapus Foto Absen"
+                                class="absolute top-2.5 right-2.5 px-2.5 py-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-700 text-white text-[11px] font-bold shadow-md flex items-center gap-1 transition active:scale-95">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                <span>Hapus Foto</span>
+                            </button>
                             <div class="absolute bottom-2 left-2 right-2 bg-slate-900/80 backdrop-blur-xs text-white px-3 py-1.5 rounded-xl flex items-center justify-between text-[11px]">
                                 <span id="wd-captured-loc" class="font-bold truncate">Lokasi</span>
                                 <span id="wd-captured-time" class="text-emerald-300 font-mono">08:00</span>
@@ -901,8 +911,16 @@
                 } catch (err) {
                     console.warn('Supabase Cloud belum siap:', err.message || err);
                     this.config.isCloudConnected = false;
-                    this.updateIndicator('error', 'Jalankan SQL / Cek URL');
+                    const isMissingTable = String(err.message || '').includes('app_state_sync') || err.code === 'PGRST205' || err.code === '42P01';
+                    this.updateIndicator('error', isMissingTable ? 'Belum Run SQL' : 'Cek SQL / URL');
                 }
+            },
+
+            async deleteCloudRecord(tableName, rowId) {
+                if (!this.sbClient || !this.hasValidUrl()) return;
+                try {
+                    await this.sbClient.from(tableName).delete().eq('id', rowId);
+                } catch (e) {}
             },
 
             applyCloudState(cloudState) {
@@ -1133,6 +1151,23 @@
         let enteredPin = '';
         let loggedInWorkerId = null;
         let activeCameraStream = null;
+        let pendingConfirmAction = null;
+        let pendingConfirmTimer = null;
+
+        function confirmTwoTap(actionKey, promptMsg, callback) {
+            if (pendingConfirmAction === actionKey) {
+                clearTimeout(pendingConfirmTimer);
+                pendingConfirmAction = null;
+                callback();
+            } else {
+                pendingConfirmAction = actionKey;
+                showToast(promptMsg);
+                clearTimeout(pendingConfirmTimer);
+                pendingConfirmTimer = setTimeout(() => {
+                    pendingConfirmAction = null;
+                }, 3000);
+            }
+        }
 
         // ====================================================================
         // LOGIKA KUNCI POLA HURUF "W" (1 -> 4 -> 7 -> 5 -> 9 -> 6 -> 3)
@@ -1485,12 +1520,18 @@
                        </div>`;
 
                 const tasksHtml = loc.tasks.map(t => `
-                    <label onclick="toggleTask('${loc.id}', '${t.id}')" class="flex items-center gap-2.5 p-2 rounded-xl hover:bg-stone-50 cursor-pointer select-none transition">
-                        <div class="w-5 h-5 rounded-lg flex items-center justify-center border transition ${t.done ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-stone-300 bg-white'}">
-                            ${t.done ? '<i data-lucide="check" class="w-3.5 h-3.5"></i>' : ''}
-                        </div>
-                        <span class="text-xs font-medium ${t.done ? 'line-through text-slate-400' : 'text-slate-700'}">${t.title}</span>
-                    </label>
+                    <div class="flex items-center justify-between gap-2 p-2 rounded-xl hover:bg-stone-50 transition group">
+                        <label onclick="toggleTask('${loc.id}', '${t.id}')" class="flex items-center gap-2.5 flex-1 cursor-pointer select-none min-w-0">
+                            <div class="w-5 h-5 rounded-lg flex items-center justify-center border shrink-0 transition ${t.done ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-stone-300 bg-white'}">
+                                ${t.done ? '<i data-lucide="check" class="w-3.5 h-3.5"></i>' : ''}
+                            </div>
+                            <span class="text-xs font-medium truncate ${t.done ? 'line-through text-slate-400' : 'text-slate-700'}">${t.title}</span>
+                        </label>
+                        <button onclick="deleteTask('${loc.id}', '${t.id}')" title="Hapus item garapan"
+                            class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition shrink-0">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
                 `).join('');
 
                 return `
@@ -1500,14 +1541,20 @@
                          class="bg-white rounded-2xl p-4 border-2 border-stone-200/90 shadow-xs flex flex-col justify-between space-y-4 transition-all">
                         
                         <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                                    <h4 class="text-sm font-extrabold text-slate-900">${loc.name}</h4>
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                    <h4 class="text-sm font-extrabold text-slate-900 truncate">${loc.name}</h4>
                                 </div>
-                                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-900">
-                                    ${assignedHere.length} Tukang
-                                </span>
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-900">
+                                        ${assignedHere.length} Tukang
+                                    </span>
+                                    <button onclick="deleteLocation('${loc.id}')" title="Hapus Zona Penempatan"
+                                        class="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white transition active:scale-95">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             ${workersHtml}
@@ -1622,6 +1669,31 @@
                 renderLocationsBoard();
                 lucide.createIcons();
             }
+        }
+
+        function deleteTask(locId, taskId) {
+            const loc = appState.locations.find(l => l.id === locId);
+            if (!loc) return;
+            loc.tasks = loc.tasks.filter(t => t.id !== taskId);
+            SupabaseService.saveState(appState);
+            showToast('Item target garapan dihapus');
+            renderLocationsBoard();
+            lucide.createIcons();
+        }
+
+        function deleteLocation(locId) {
+            const loc = appState.locations.find(l => l.id === locId);
+            if (!loc) return;
+            confirmTwoTap(`del_loc_${locId}`, `Ketuk hapus sekali lagi untuk menghapus "${loc.name}"`, () => {
+                appState.locations = appState.locations.filter(l => l.id !== locId);
+                Object.keys(appState.assignments).forEach(dateKey => {
+                    appState.assignments[dateKey] = (appState.assignments[dateKey] || []).filter(a => a.locationId !== locId);
+                });
+                SupabaseService.saveState(appState);
+                SupabaseService.deleteCloudRecord('locations', locId);
+                showToast(`Zona "${loc.name}" dihapus`);
+                renderAll();
+            });
         }
 
         // Tap-to-assign modal for easy thumb interaction
@@ -2458,6 +2530,42 @@
             showToast('Foto absensi berhasil dikirim ke Bos!');
         }
 
+        function deleteAttendancePhoto(workerId, dateStr = activeAttendanceDate) {
+            if (!appState.attendancePhotos[dateStr]) return;
+            confirmTwoTap(`del_photo_${dateStr}_${workerId}`, 'Ketuk hapus sekali lagi untuk menghapus foto absen ini', () => {
+                appState.attendancePhotos[dateStr] = appState.attendancePhotos[dateStr].filter(p => p.workerId !== workerId);
+                SupabaseService.saveState(appState);
+                SupabaseService.deleteCloudRecord('attendance_photos', `att_${dateStr}_${workerId}`);
+                showToast('Data foto absen berhasil dihapus');
+                renderAttendanceCheckTab(dateStr);
+                if (loggedInWorkerId === workerId) {
+                    renderWorkerDashboard(workerId);
+                }
+                lucide.createIcons();
+            });
+        }
+
+        function deleteOwnAttendancePhoto() {
+            if (!loggedInWorkerId) return;
+            deleteAttendancePhoto(loggedInWorkerId, activeDate);
+        }
+
+        function clearAllAttendancePhotosForDate() {
+            const photos = appState.attendancePhotos[activeAttendanceDate] || [];
+            if (photos.length === 0) return;
+            confirmTwoTap(`clear_photos_${activeAttendanceDate}`, 'Ketuk sekali lagi untuk menghapus semua foto tanggal ini', () => {
+                photos.forEach(p => {
+                    SupabaseService.deleteCloudRecord('attendance_photos', `att_${activeAttendanceDate}_${p.workerId}`);
+                });
+                appState.attendancePhotos[activeAttendanceDate] = [];
+                SupabaseService.saveState(appState);
+                showToast('Semua foto absensi tanggal ini dihapus');
+                renderAttendanceCheckTab(activeAttendanceDate);
+                if (loggedInWorkerId) renderWorkerDashboard(loggedInWorkerId);
+                lucide.createIcons();
+            });
+        }
+
         function renderAttendanceCheckTab(dateVal = null) {
             if (dateVal) activeAttendanceDate = dateVal;
             const picker = document.getElementById('attendance-check-date');
@@ -2467,6 +2575,11 @@
             if (!grid) return;
 
             const photos = appState.attendancePhotos[activeAttendanceDate] || [];
+            const btnClearAll = document.getElementById('btn-clear-all-photos');
+            if (btnClearAll) {
+                btnClearAll.classList.toggle('hidden', photos.length === 0);
+            }
+
             const totalWorkers = appState.workers.length;
             const checkedCount = photos.length;
             const uncheckedCount = Math.max(0, totalWorkers - checkedCount);
@@ -2489,9 +2602,13 @@
                     <div class="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden flex flex-col">
                         <div class="relative aspect-[4/3] bg-stone-100">
                             <img src="${item.photoDataUrl}" alt="Absen ${item.workerName}" class="w-full h-full object-cover">
-                            <span class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold shadow-xs">
+                            <span class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold shadow-xs">
                                 HADIR • ${item.time}
                             </span>
+                            <button onclick="deleteAttendancePhoto('${item.workerId}', '${activeAttendanceDate}')" title="Hapus Data Foto Absen"
+                                class="absolute top-2.5 right-2.5 p-2 rounded-full bg-rose-600/90 hover:bg-rose-700 text-white shadow-md transition active:scale-95">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
                         </div>
                         <div class="p-3.5 flex items-center justify-between gap-2">
                             <div class="flex items-center gap-2.5 min-w-0">
