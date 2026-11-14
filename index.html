@@ -2,7 +2,10 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#FAF9F6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>AdiJaya Dasboard — Operasional & Payroll Bengkel Las</title>
     
     <!-- Google Fonts: Inter -->
@@ -35,10 +38,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
-        body {
+        html, body {
             background-color: #FAF9F6;
             color: #0F172A;
             -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
+        body {
+            padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+        }
+        .safe-header {
+            padding-top: env(safe-area-inset-top, 0px);
+        }
+        .safe-bottom-nav {
+            padding-bottom: calc(0.375rem + env(safe-area-inset-bottom, 0px));
         }
         /* Smooth tactile transitions */
         .tactile-card {
@@ -62,16 +76,16 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-blue-900 selection:text-white pb-24">
+<body class="min-h-[100dvh] flex flex-col font-sans antialiased selection:bg-blue-900 selection:text-white">
 
     <!-- ===================================================================== -->
     <!-- TOP STICKY HEADER & ROLE SWITCHER                                     -->
     <!-- ===================================================================== -->
-    <header class="sticky top-0 z-30 bg-[#FAF9F6]/90 backdrop-blur-md border-b border-stone-200/80">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+    <header class="sticky top-0 z-30 bg-[#FAF9F6]/95 backdrop-blur-md border-b border-stone-200/80 safe-header">
+        <div class="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
             <!-- Brand Identity dengan Logo Custom AJ -->
-            <div class="flex items-center gap-2.5">
-                <div class="w-10 h-10 rounded-2xl bg-[#181818] flex items-center justify-center shadow-sm border border-stone-800 shrink-0 p-1.5">
+            <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#181818] flex items-center justify-center shadow-sm border border-stone-800 shrink-0 p-1.5">
                     <svg viewBox="0 0 120 110" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <!-- Huruf J Putih -->
                         <path d="M74 34H94V78C94 92 84 100 68 100H56C41 100 32 91 32 77V68H51V75C51 80 54 83 60 83H67C72 83 74 80 74 75V34Z" fill="#FFFFFF"/>
@@ -79,14 +93,14 @@
                         <path d="M38 10H57L84 74H65L59 59H35L29 74H11L38 10ZM41 44H53L47 28L41 44Z" fill="#F94D00"/>
                     </svg>
                 </div>
-                <div>
-                    <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 leading-none">
+                <div class="min-w-0">
+                    <h1 class="text-sm sm:text-lg font-extrabold tracking-tight text-slate-900 leading-none truncate">
                         AdiJaya <span class="text-[#F94D00]">Dasboard</span>
                     </h1>
-                    <div class="flex items-center gap-1.5 mt-0.5">
-                        <p class="text-[10px] font-bold tracking-wider uppercase text-slate-500">Welding & Construction</p>
+                    <div class="flex items-center gap-1.5 mt-1">
+                        <p class="hidden min-[380px]:block text-[9px] sm:text-[10px] font-bold tracking-wider uppercase text-slate-500 truncate">Welding & Construction</p>
                         <span id="db-live-indicator" title="Status Koneksi Cloud Supabase"
-                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 transition">
+                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 transition shrink-0">
                             <span id="db-live-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
                             <span id="db-live-text">Menghubungkan...</span>
                         </span>
@@ -95,20 +109,20 @@
             </div>
 
             <!-- Role Switcher Toggle + Kunci Mode Bos -->
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button id="btn-lock-bos" onclick="lockBosMode()" title="Kunci Layar Bos"
-                    class="hidden p-2 rounded-xl bg-stone-200/80 hover:bg-stone-300 text-slate-700 transition active:scale-95">
+                    class="hidden p-2 rounded-xl bg-stone-200/80 hover:bg-stone-300 text-slate-700 transition active:scale-95 min-w-[36px] min-h-[36px] flex items-center justify-center">
                     <i data-lucide="lock" class="w-4 h-4"></i>
                 </button>
-                <div class="bg-stone-200/80 p-1 rounded-2xl flex items-center border border-stone-300/60 shadow-inner">
+                <div class="bg-stone-200/80 p-1 rounded-xl sm:rounded-2xl flex items-center border border-stone-300/60 shadow-inner">
                     <button id="btn-role-bos" onclick="switchRole('bos')"
-                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-blue-900 text-white shadow-xs">
-                        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                        class="px-2.5 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 bg-blue-900 text-white shadow-xs whitespace-nowrap">
+                        <i data-lucide="shield-check" class="w-3.5 h-3.5 shrink-0"></i>
                         <span>Mode Bos</span>
                     </button>
                     <button id="btn-role-tukang" onclick="switchRole('tukang')"
-                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
-                        <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                        class="px-2.5 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 text-slate-600 hover:text-slate-900 whitespace-nowrap">
+                        <i data-lucide="smartphone" class="w-3.5 h-3.5 shrink-0"></i>
                         <span>HP Tukang</span>
                     </button>
                 </div>
@@ -119,10 +133,10 @@
     <!-- ===================================================================== -->
     <!-- LAYAR KUNCI POLA HURUF "W" UNTUK MODE BOS                             -->
     <!-- ===================================================================== -->
-    <section id="bos-lock-screen" class="max-w-md mx-auto w-full px-4 pt-8 pb-12">
-        <div class="bg-white rounded-3xl p-6 border border-stone-200 shadow-sm text-center space-y-5">
+    <section id="bos-lock-screen" class="max-w-md mx-auto w-full px-3 sm:px-4 pt-6 sm:pt-8 pb-10">
+        <div class="bg-white rounded-3xl p-5 sm:p-6 border border-stone-200 shadow-sm text-center space-y-4 sm:space-y-5">
             <!-- Logo Header Lock -->
-            <div class="w-16 h-16 mx-auto rounded-2xl bg-[#181818] p-2.5 shadow-md flex items-center justify-center">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 mx-auto rounded-2xl bg-[#181818] p-2.5 shadow-md flex items-center justify-center">
                 <svg viewBox="0 0 120 110" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M74 34H94V78C94 92 84 100 68 100H56C41 100 32 91 32 77V68H51V75C51 80 54 83 60 83H67C72 83 74 80 74 75V34Z" fill="#FFFFFF"/>
                     <path d="M38 10H57L84 74H65L59 59H35L29 74H11L38 10ZM41 44H53L47 28L41 44Z" fill="#F94D00"/>
@@ -130,14 +144,14 @@
             </div>
 
             <div>
-                <h2 class="text-lg font-extrabold text-slate-900">Akses Khusus Owner / Bos</h2>
+                <h2 class="text-base sm:text-lg font-extrabold text-slate-900">Akses Khusus Owner / Bos</h2>
                 <p id="pattern-status-text" class="text-xs text-slate-500 mt-1">
                     Masukkan pola kunci untuk membuka dashboard
                 </p>
             </div>
 
-            <!-- Interactive 3x3 Pattern Grid -->
-            <div class="relative w-64 h-64 mx-auto bg-stone-50 rounded-3xl border border-stone-200 p-4 select-none touch-none" id="pattern-pad">
+            <!-- Interactive 3x3 Pattern Grid (Responsive size for all phones) -->
+            <div class="relative w-56 h-56 min-[360px]:w-64 min-[360px]:h-64 mx-auto bg-stone-50 rounded-3xl border border-stone-200 p-4 select-none touch-none" id="pattern-pad">
                 <svg id="pattern-svg" class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 256 256">
                     <polyline id="pattern-line" points="" fill="none" stroke="#F94D00" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
@@ -159,7 +173,7 @@
     <!-- ===================================================================== -->
     <!-- A. MODE BOS (OWNER DASHBOARD)                                         -->
     <!-- ===================================================================== -->
-    <main id="view-bos" class="hidden max-w-4xl mx-auto w-full px-4 pt-4 space-y-5">
+    <main id="view-bos" class="hidden max-w-4xl mx-auto w-full px-3 sm:px-4 pt-3.5 sm:pt-4 space-y-4 sm:space-y-5">
 
         <!-- TAB 1: PAPAN KERJA HARIAN (VISUAL DISPATCH BOARD) -->
         <div id="bos-tab-board" class="space-y-5">
@@ -213,8 +227,8 @@
                     </div>
                 </div>
 
-                <!-- Grid Avatar Tukang -->
-                <div id="worker-pool-grid" class="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
+                <!-- Grid Avatar Tukang (Responsif untuk HP 320px hingga Tablet/Desktop) -->
+                <div id="worker-pool-grid" class="grid grid-cols-3 min-[380px]:grid-cols-4 sm:grid-cols-6 gap-2 sm:gap-2.5">
                     <!-- Rendered dynamically via JS -->
                 </div>
             </section>
@@ -271,7 +285,7 @@
 
             <!-- Log Kehadiran Harian Minggu Ini -->
             <section class="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs space-y-3">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between gap-2">
                     <div>
                         <h3 class="text-sm font-extrabold text-slate-900">Log Kehadiran & Lembur</h3>
                         <p class="text-xs text-slate-500">Rekap harian seluruh lokasi kerja</p>
@@ -290,7 +304,7 @@
         <!-- TAB 3: PAYOUT MINGGUAN (AUTO-PAYROLL SABTU) -->
         <div id="bos-tab-payroll" class="hidden space-y-5">
             <!-- Hero Total Gajian Sabtu -->
-            <div class="bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 text-white rounded-3xl p-5 shadow-md relative overflow-hidden">
+            <div class="bg-gradient-to-br from-blue-950 via-blue-900 to-slate-900 text-white rounded-3xl p-4 sm:p-5 shadow-md relative overflow-hidden">
                 <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-amber-300 text-[11px] font-bold uppercase tracking-wider">
@@ -333,14 +347,14 @@
                 </div>
 
                 <!-- Strip 7 Hari Cepat -->
-                <div id="schedule-week-strip" class="grid grid-cols-7 gap-1.5">
+                <div id="schedule-week-strip" class="grid grid-cols-7 gap-1 sm:gap-1.5">
                     <!-- Rendered dynamically via JS -->
                 </div>
             </div>
 
             <!-- Form Tambah Jadwal Cepat pada Tanggal Terpilih -->
             <div class="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs space-y-3">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-wrap items-center justify-between gap-2">
                     <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500">
                         Plot Jadwal Tanggal: <span id="schedule-selected-label" class="text-blue-900">Sabtu, 14 Nov 2026</span>
                     </h3>
@@ -405,7 +419,7 @@
                     </h2>
                     <p class="text-xs text-slate-500 mt-0.5">Bukti foto selfie tukang saat tiba di lokasi kerja</p>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                     <input type="date" id="attendance-check-date" value="2026-11-14" onchange="renderAttendanceCheckTab(this.value)"
                         class="px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-xs font-bold text-slate-800 focus:outline-none focus:border-blue-900">
                     <button id="btn-clear-all-photos" onclick="clearAllAttendancePhotosForDate()"
@@ -435,38 +449,38 @@
         </div>
     </main>
 
-    <!-- BOTTOM NAVIGATION BAR (MODE BOS — 6 MENU TERPISAH) -->
-    <nav id="bos-bottom-nav" class="hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-stone-200 shadow-lg">
-        <div class="max-w-4xl mx-auto grid grid-cols-6 p-1.5 gap-1">
+    <!-- BOTTOM NAVIGATION BAR (MODE BOS — 6 MENU TERPISAH, SAFE-AREA MOBILE) -->
+    <nav id="bos-bottom-nav" class="hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-stone-200 shadow-lg safe-bottom-nav">
+        <div class="max-w-4xl mx-auto grid grid-cols-6 px-1 pt-1.5 gap-0.5 sm:gap-1">
             <button onclick="switchBosTab('board')" id="nav-board"
-                class="py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-blue-900 bg-blue-50 font-bold text-[10px] sm:text-[11px] transition">
-                <i data-lucide="kanban" class="w-4 h-4"></i>
-                <span>Papan</span>
+                class="min-h-[48px] py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-blue-900 bg-blue-50 font-bold text-[9px] min-[380px]:text-[10px] sm:text-[11px] leading-tight transition">
+                <i data-lucide="kanban" class="w-4 h-4 shrink-0"></i>
+                <span class="truncate max-w-full">Papan</span>
             </button>
             <button onclick="switchBosTab('attendance')" id="nav-attendance"
-                class="py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-stone-100 font-semibold text-[10px] sm:text-[11px] transition">
-                <i data-lucide="camera" class="w-4 h-4"></i>
-                <span>Kehadiran</span>
+                class="min-h-[48px] py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-slate-500 hover:bg-stone-100 font-semibold text-[9px] min-[380px]:text-[10px] sm:text-[11px] leading-tight transition">
+                <i data-lucide="camera" class="w-4 h-4 shrink-0"></i>
+                <span class="truncate max-w-full">Kehadiran</span>
             </button>
             <button onclick="switchBosTab('schedule')" id="nav-schedule"
-                class="py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-stone-100 font-semibold text-[10px] sm:text-[11px] transition">
-                <i data-lucide="calendar-days" class="w-4 h-4"></i>
-                <span>Schedule</span>
+                class="min-h-[48px] py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-slate-500 hover:bg-stone-100 font-semibold text-[9px] min-[380px]:text-[10px] sm:text-[11px] leading-tight transition">
+                <i data-lucide="calendar-days" class="w-4 h-4 shrink-0"></i>
+                <span class="truncate max-w-full">Schedule</span>
             </button>
             <button onclick="switchBosTab('workers')" id="nav-workers"
-                class="py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-stone-100 font-semibold text-[10px] sm:text-[11px] transition">
-                <i data-lucide="users" class="w-4 h-4"></i>
-                <span>Karyawan</span>
+                class="min-h-[48px] py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-slate-500 hover:bg-stone-100 font-semibold text-[9px] min-[380px]:text-[10px] sm:text-[11px] leading-tight transition">
+                <i data-lucide="users" class="w-4 h-4 shrink-0"></i>
+                <span class="truncate max-w-full">Karyawan</span>
             </button>
             <button onclick="switchBosTab('kasbon')" id="nav-kasbon"
-                class="py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-stone-100 font-semibold text-[10px] sm:text-[11px] transition">
-                <i data-lucide="wallet" class="w-4 h-4"></i>
-                <span>Kasbon</span>
+                class="min-h-[48px] py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-slate-500 hover:bg-stone-100 font-semibold text-[9px] min-[380px]:text-[10px] sm:text-[11px] leading-tight transition">
+                <i data-lucide="wallet" class="w-4 h-4 shrink-0"></i>
+                <span class="truncate max-w-full">Kasbon</span>
             </button>
             <button onclick="switchBosTab('payroll')" id="nav-payroll"
-                class="py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-stone-100 font-semibold text-[10px] sm:text-[11px] transition">
-                <i data-lucide="banknote" class="w-4 h-4"></i>
-                <span>Gajian</span>
+                class="min-h-[48px] py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-slate-500 hover:bg-stone-100 font-semibold text-[9px] min-[380px]:text-[10px] sm:text-[11px] leading-tight transition">
+                <i data-lucide="banknote" class="w-4 h-4 shrink-0"></i>
+                <span class="truncate max-w-full">Gajian</span>
             </button>
         </div>
     </nav>
@@ -474,7 +488,7 @@
     <!-- ===================================================================== -->
     <!-- B. MODE KARYAWAN (TAMPILAN HP TUKANG)                                 -->
     <!-- ===================================================================== -->
-    <main id="view-tukang" class="hidden max-w-md mx-auto w-full px-4 pt-5 space-y-5">
+    <main id="view-tukang" class="hidden max-w-md mx-auto w-full px-3 sm:px-4 pt-4 sm:pt-5 space-y-4 sm:space-y-5">
         
         <!-- 1. LAYAR LOGIN WAJAH + PIN -->
         <div id="tukang-login-screen" class="space-y-4">
@@ -484,7 +498,7 @@
             </div>
 
             <!-- Grid Foto Wajah Tukang -->
-            <div id="tukang-face-grid" class="grid grid-cols-3 gap-3">
+            <div id="tukang-face-grid" class="grid grid-cols-2 min-[340px]:grid-cols-3 gap-2.5 sm:gap-3">
                 <!-- Rendered dynamically via JS -->
             </div>
         </div>
@@ -606,8 +620,8 @@
     <!-- ===================================================================== -->
 
     <!-- Modal 1: Pilih Lokasi (Untuk kemudahan Tap di HP tanpa harus Drag) -->
-    <div id="modal-assign" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-xl space-y-4">
+    <div id="modal-assign" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-3 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-4 sm:p-5 shadow-xl space-y-4 max-h-[85dvh] overflow-y-auto mb-[env(safe-area-inset-bottom,0px)]">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <img id="assign-modal-avatar" src="" class="w-11 h-11 rounded-full object-cover ring-2 ring-blue-900">
@@ -627,8 +641,8 @@
     </div>
 
     <!-- Modal 2: Tambah Lokasi Proyek Baru -->
-    <div id="modal-location" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-xl space-y-4">
+    <div id="modal-location" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-4 sm:p-5 shadow-xl space-y-4 max-h-[85dvh] overflow-y-auto">
             <div class="flex items-center justify-between">
                 <h3 class="text-base font-extrabold text-slate-900">Tambah Lokasi / Proyek Baru</h3>
                 <button onclick="closeModal('modal-location')" class="p-2 rounded-full bg-stone-100 text-slate-500">
@@ -654,8 +668,8 @@
     </div>
 
     <!-- Modal 3: Catat Kasbon Baru / Atur Potongan -->
-    <div id="modal-kasbon" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-xl space-y-4">
+    <div id="modal-kasbon" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-4 sm:p-5 shadow-xl space-y-4 max-h-[85dvh] overflow-y-auto">
             <div class="flex items-center justify-between">
                 <h3 class="text-base font-extrabold text-slate-900">Catat Kasbon / Cicilan Mingguan</h3>
                 <button onclick="closeModal('modal-kasbon')" class="p-2 rounded-full bg-stone-100 text-slate-500">
@@ -685,8 +699,8 @@
     </div>
 
     <!-- Modal 4: Tambah / Edit Data Karyawan -->
-    <div id="modal-worker-edit" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+    <div id="modal-worker-edit" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-4 sm:p-5 shadow-xl space-y-4 max-h-[88dvh] overflow-y-auto">
             <div class="flex items-center justify-between">
                 <h3 id="worker-modal-title" class="text-base font-extrabold text-slate-900">Edit Data Tukang</h3>
                 <button onclick="closeModal('modal-worker-edit')" class="p-2 rounded-full bg-stone-100 text-slate-500">
@@ -737,9 +751,9 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">PIN Login HP (4 Digit)</label>
-                    <input id="edit-worker-pin" type="text" maxlength="4" placeholder="1234"
-                        class="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs font-semibold">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">PIN Login HP (4 Digit Angka)</label>
+                    <input id="edit-worker-pin" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="1234"
+                        class="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs font-semibold">
                 </div>
                 <button onclick="saveWorkerEdit()" class="w-full py-3 rounded-xl bg-blue-900 text-white font-bold text-sm hover:bg-blue-950 transition">
                     Simpan Data Tukang
@@ -749,12 +763,12 @@
     </div>
 
     <!-- Modal 5: Input PIN Login Tukang -->
-    <div id="modal-pin" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl text-center space-y-4">
-            <img id="pin-worker-avatar" src="" class="w-16 h-16 rounded-full mx-auto object-cover ring-4 ring-blue-900/20">
+    <div id="modal-pin" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white w-full max-w-xs rounded-3xl p-5 sm:p-6 shadow-2xl text-center space-y-4 max-h-[90dvh] overflow-y-auto">
+            <img id="pin-worker-avatar" src="" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full mx-auto object-cover ring-4 ring-blue-900/20">
             <div>
                 <h3 id="pin-worker-name" class="text-base font-extrabold text-slate-900">Nama Tukang</h3>
-                <p class="text-xs text-slate-500">Masukkan 4 digit PIN Anda</p>
+                <p id="pin-modal-subtitle" class="text-xs text-slate-500">Masukkan 4 digit PIN Anda</p>
             </div>
             <div id="pin-dots" class="flex justify-center gap-3 py-1">
                 <span class="w-3.5 h-3.5 rounded-full bg-stone-200"></span>
@@ -763,25 +777,25 @@
                 <span class="w-3.5 h-3.5 rounded-full bg-stone-200"></span>
             </div>
             <div class="grid grid-cols-3 gap-2 pt-1">
-                <button onclick="pressPin('1')" class="py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 font-extrabold text-base">1</button>
-                <button onclick="pressPin('2')" class="py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 font-extrabold text-base">2</button>
-                <button onclick="pressPin('3')" class="py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 font-extrabold text-base">3</button>
-                <button onclick="pressPin('4')" class="py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 font-extrabold text-base">4</button>
-                <button onclick="pressPin('5')" class="py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 font-extrabold text-base">5</button>
-                <button onclick="pressPin('6')" class="py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 font-extrabold text-base">6</button>
-                <button onclick="pressPin('7')" class="py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 font-extrabold text-base">7</button>
-                <button onclick="pressPin('8')" class="py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 font-extrabold text-base">8</button>
-                <button onclick="pressPin('9')" class="py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 font-extrabold text-base">9</button>
-                <button onclick="closeModal('modal-pin')" class="py-3 rounded-2xl bg-rose-50 text-rose-600 font-bold text-xs">Batal</button>
-                <button onclick="pressPin('0')" class="py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 font-extrabold text-base">0</button>
-                <button onclick="clearPin()" class="py-3 rounded-2xl bg-stone-100 text-slate-600 font-bold text-xs">Hapus</button>
+                <button onclick="pressPin('1')" class="min-h-[48px] py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 active:scale-95 font-extrabold text-base transition">1</button>
+                <button onclick="pressPin('2')" class="min-h-[48px] py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 active:scale-95 font-extrabold text-base transition">2</button>
+                <button onclick="pressPin('3')" class="min-h-[48px] py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 active:scale-95 font-extrabold text-base transition">3</button>
+                <button onclick="pressPin('4')" class="min-h-[48px] py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 active:scale-95 font-extrabold text-base transition">4</button>
+                <button onclick="pressPin('5')" class="min-h-[48px] py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 active:scale-95 font-extrabold text-base transition">5</button>
+                <button onclick="pressPin('6')" class="min-h-[48px] py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 active:scale-95 font-extrabold text-base transition">6</button>
+                <button onclick="pressPin('7')" class="min-h-[48px] py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 active:scale-95 font-extrabold text-base transition">7</button>
+                <button onclick="pressPin('8')" class="min-h-[48px] py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 active:scale-95 font-extrabold text-base transition">8</button>
+                <button onclick="pressPin('9')" class="min-h-[48px] py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 active:scale-95 font-extrabold text-base transition">9</button>
+                <button onclick="closeModal('modal-pin')" class="min-h-[48px] py-3 rounded-2xl bg-rose-50 text-rose-600 active:scale-95 font-bold text-xs transition">Batal</button>
+                <button onclick="pressPin('0')" class="min-h-[48px] py-3 rounded-2xl bg-stone-100 hover:bg-stone-200 active:scale-95 font-extrabold text-base transition">0</button>
+                <button onclick="clearPin()" class="min-h-[48px] py-3 rounded-2xl bg-stone-100 text-slate-600 active:scale-95 font-bold text-xs transition">Hapus</button>
             </div>
         </div>
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200">
-        <div id="toast-msg" class="bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2">
+    <div id="toast" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-opacity duration-200 max-w-[92vw]">
+        <div id="toast-msg" class="bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg text-center">
             Tersimpan
         </div>
     </div>
@@ -790,6 +804,37 @@
     <!-- JAVASCRIPT LOGIC & EMBEDDED ALWAYS-OPEN DATABASE ENGINE               -->
     <!-- ===================================================================== -->
     <script>
+        /**
+         * ====================================================================
+         * SECURITY HELPERS (XSS PREVENTION & SAFE IMAGE VALIDATION)
+         * ====================================================================
+         */
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function sanitizeImageUrl(url, fallbackName = 'T') {
+            const raw = String(url ?? '').trim();
+            if (raw.startsWith('data:image/jpeg;base64,') || raw.startsWith('data:image/png;base64,') || raw.startsWith('data:image/webp;base64,')) {
+                return raw;
+            }
+            if (raw.startsWith('https://ui-avatars.com/api/') || raw.startsWith('https://qcevhuqfsuhcpcfdshel.supabase.co/')) {
+                return raw;
+            }
+            return getAvatarFallback(fallbackName);
+        }
+
+        function clampMoney(val, fallback = 0) {
+            const num = parseInt(val, 10);
+            if (isNaN(num) || num < 0) return fallback;
+            return Math.min(num, 100000000);
+        }
+
         /**
          * ====================================================================
          * SUPABASE & EMBEDDED ALWAYS-OPEN DATABASE ENGINE (MULTI-DEVICE)
@@ -801,7 +846,6 @@
             config: {
                 url: DEFAULT_SUPABASE_URL,
                 publishableKey: 'sb_publishable_iCz_3K5XTTOIF6KFGMVM3g_R7AhicN6',
-                secretKey: 'sb_secret_2Xfpho4U4kIKmUqz1uPogg_5HdaOKaV',
                 dbName: 'AdiJayaEmbeddedDB',
                 storeName: 'operational_state',
                 isCloudConnected: false
@@ -1153,6 +1197,10 @@
         let activeCameraStream = null;
         let pendingConfirmAction = null;
         let pendingConfirmTimer = null;
+        let bosPatternAttempts = 0;
+        let bosLockoutUntil = 0;
+        let workerPinAttempts = 0;
+        let workerPinLockoutUntil = 0;
 
         function confirmTwoTap(actionKey, promptMsg, callback) {
             if (pendingConfirmAction === actionKey) {
@@ -1264,7 +1312,19 @@
         function verifyPatternW() {
             const seq = currentPatternNodes.join('');
             const statusText = document.getElementById('pattern-status-text');
+            const now = Date.now();
+
+            if (now < bosLockoutUntil) {
+                const rem = Math.ceil((bosLockoutUntil - now) / 1000);
+                currentPatternNodes = [];
+                updatePatternVisuals(true);
+                statusText.textContent = `Terlalu banyak percobaan. Tunggu ${rem} detik.`;
+                statusText.classList.add('text-rose-600', 'font-bold');
+                return;
+            }
+
             if (seq === TARGET_W_PATTERN) {
+                bosPatternAttempts = 0;
                 isBosUnlocked = true;
                 currentPatternNodes = [];
                 updatePatternVisuals();
@@ -1272,15 +1332,22 @@
                 updateBosVisibility();
                 renderAll();
             } else if (seq.length > 0) {
+                bosPatternAttempts += 1;
                 updatePatternVisuals(true);
-                statusText.textContent = 'Pola salah! Coba tarik ulang.';
+                if (bosPatternAttempts >= 5) {
+                    bosLockoutUntil = Date.now() + 15000;
+                    bosPatternAttempts = 0;
+                    statusText.textContent = 'Pola salah 5x. Terkunci sementara 15 detik.';
+                } else {
+                    statusText.textContent = 'Pola salah! Coba tarik ulang.';
+                }
                 statusText.classList.add('text-rose-600', 'font-bold');
                 setTimeout(() => {
                     currentPatternNodes = [];
                     updatePatternVisuals(false);
                     statusText.textContent = 'Masukkan pola kunci untuk membuka dashboard';
                     statusText.classList.remove('text-rose-600', 'font-bold');
-                }, 650);
+                }, 850);
             }
         }
 
@@ -1389,8 +1456,8 @@
                 if (el) el.classList.toggle('hidden', t !== tab);
                 if (nav) {
                     nav.className = t === tab
-                        ? 'py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-blue-900 bg-blue-50 font-bold text-[10px] sm:text-[11px] transition'
-                        : 'py-2 px-1 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-500 hover:bg-stone-100 font-semibold text-[10px] sm:text-[11px] transition';
+                        ? 'min-h-[48px] py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-blue-900 bg-blue-50 font-bold text-[9px] min-[380px]:text-[10px] sm:text-[11px] leading-tight transition'
+                        : 'min-h-[48px] py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center gap-0.5 text-slate-500 hover:bg-stone-100 font-semibold text-[9px] min-[380px]:text-[10px] sm:text-[11px] leading-tight transition';
                 }
             });
             renderAll();
@@ -1444,22 +1511,26 @@
                 const ringClass = isInti ? 'ring-2 ring-amber-500' : 'ring-2 ring-slate-300';
                 const roleBadgeColor = w.role === 'Las' ? 'bg-blue-100 text-blue-900' :
                                        w.role === 'Sipil' ? 'bg-emerald-100 text-emerald-900' : 'bg-stone-200 text-slate-700';
+                const safeNick = escapeHtml(w.nickname);
+                const safeRole = escapeHtml(w.role);
+                const safeLocName = loc ? escapeHtml(loc.name) : '';
+                const safeAvatar = sanitizeImageUrl(w.avatar, w.nickname);
 
                 return `
                     <div draggable="true"
-                         ondragstart="handleDragStart(event, '${w.id}')"
-                         onclick="openAssignModal('${w.id}')"
+                         ondragstart="handleDragStart(event, '${escapeHtml(w.id)}')"
+                         onclick="openAssignModal('${escapeHtml(w.id)}')"
                          class="tactile-card cursor-grab active:cursor-grabbing bg-stone-50/70 hover:bg-white rounded-2xl p-2 border ${assign ? 'border-emerald-300 bg-emerald-50/40' : 'border-stone-200/80'} flex flex-col items-center text-center relative select-none">
                         
-                        ${loc ? `<span class="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-bold shadow-xs max-w-[72px] truncate">${loc.name}</span>` : ''}
+                        ${loc ? `<span class="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-bold shadow-xs max-w-[68px] truncate">${safeLocName}</span>` : ''}
 
-                        <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                        <img src="${safeAvatar}"
                              onerror="this.src='${getAvatarFallback(w.nickname)}'"
-                             alt="${w.nickname}"
+                             alt="${safeNick}"
                              class="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover ${ringClass} shadow-xs pointer-events-none">
                         
-                        <span class="text-xs font-extrabold text-slate-800 mt-1.5 leading-tight truncate w-full">${w.nickname}</span>
-                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 ${roleBadgeColor}">${w.role}</span>
+                        <span class="text-[11px] sm:text-xs font-extrabold text-slate-800 mt-1.5 leading-tight truncate w-full">${safeNick}</span>
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 ${roleBadgeColor}">${safeRole}</span>
                     </div>
                 `;
             }).join('');
@@ -1481,6 +1552,8 @@
 
             grid.innerHTML = appState.locations.map(loc => {
                 const assignedHere = todayAssignments.filter(a => a.locationId === loc.id);
+                const safeLocId = escapeHtml(loc.id);
+                const safeLocName = escapeHtml(loc.name);
 
                 const workersHtml = assignedHere.length === 0
                     ? `<div class="py-5 text-center border-2 border-dashed border-stone-200 rounded-xl text-xs text-slate-400">
@@ -1491,26 +1564,30 @@
                             const w = appState.workers.find(wk => wk.id === a.workerId);
                             if (!w) return '';
                             const isInti = w.tier === 'Inti';
+                            const safeWId = escapeHtml(w.id);
+                            const safeWNick = escapeHtml(w.nickname);
+                            const safeWRole = escapeHtml(w.role);
+                            const safeAvatar = sanitizeImageUrl(w.avatar, w.nickname);
                             return `
-                                <div class="flex items-center justify-between gap-2 bg-stone-50 p-2 rounded-xl border border-stone-200/80">
-                                    <div class="flex items-center gap-2 min-w-0">
-                                        <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                                <div class="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 bg-stone-50 p-2.5 rounded-xl border border-stone-200/80">
+                                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                                        <img src="${safeAvatar}"
                                              onerror="this.src='${getAvatarFallback(w.nickname)}'"
                                              class="w-8 h-8 rounded-full object-cover ${isInti ? 'ring-2 ring-amber-500' : 'ring-1 ring-slate-300'} shrink-0">
                                         <div class="min-w-0">
-                                            <div class="text-xs font-extrabold text-slate-900 truncate">${w.nickname}</div>
-                                            <div class="text-[10px] font-semibold text-emerald-700">Hadir • ${w.role}</div>
+                                            <div class="text-xs font-extrabold text-slate-900 truncate">${safeWNick}</div>
+                                            <div class="text-[10px] font-semibold text-emerald-700">Hadir • ${safeWRole}</div>
                                         </div>
                                     </div>
 
-                                    <div class="flex items-center gap-1 shrink-0">
+                                    <div class="flex items-center justify-end gap-1 w-full sm:w-auto pt-1.5 sm:pt-0 border-t sm:border-t-0 border-stone-200/70 shrink-0">
                                         ${[1, 2, 3].map(hr => `
-                                            <button onclick="setOvertime('${w.id}', ${a.overtime === hr ? 0 : hr})"
-                                                class="px-2 py-1 rounded-lg text-[10px] font-extrabold transition ${a.overtime === hr ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white border border-stone-200 text-slate-600 hover:bg-amber-50'}">
+                                            <button onclick="setOvertime('${safeWId}', ${a.overtime === hr ? 0 : hr})"
+                                                class="min-h-[30px] px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition ${a.overtime === hr ? 'bg-amber-500 text-slate-950 shadow-xs' : 'bg-white border border-stone-200 text-slate-600 hover:bg-amber-50'}">
                                                 +${hr}j
                                             </button>
                                         `).join('')}
-                                        <button onclick="removeAssignment('${w.id}')" title="Keluarkan dari lokasi" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50">
+                                        <button onclick="removeAssignment('${safeWId}')" title="Keluarkan dari lokasi" class="min-h-[30px] min-w-[30px] flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50">
                                             <i data-lucide="x" class="w-3.5 h-3.5"></i>
                                         </button>
                                     </div>
@@ -1519,38 +1596,42 @@
                         }).join('')}
                        </div>`;
 
-                const tasksHtml = loc.tasks.map(t => `
+                const tasksHtml = loc.tasks.map(t => {
+                    const safeTaskId = escapeHtml(t.id);
+                    const safeTaskTitle = escapeHtml(t.title);
+                    return `
                     <div class="flex items-center justify-between gap-2 p-2 rounded-xl hover:bg-stone-50 transition group">
-                        <label onclick="toggleTask('${loc.id}', '${t.id}')" class="flex items-center gap-2.5 flex-1 cursor-pointer select-none min-w-0">
+                        <label onclick="toggleTask('${safeLocId}', '${safeTaskId}')" class="flex items-center gap-2.5 flex-1 cursor-pointer select-none min-w-0">
                             <div class="w-5 h-5 rounded-lg flex items-center justify-center border shrink-0 transition ${t.done ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-stone-300 bg-white'}">
                                 ${t.done ? '<i data-lucide="check" class="w-3.5 h-3.5"></i>' : ''}
                             </div>
-                            <span class="text-xs font-medium truncate ${t.done ? 'line-through text-slate-400' : 'text-slate-700'}">${t.title}</span>
+                            <span class="text-xs font-medium truncate ${t.done ? 'line-through text-slate-400' : 'text-slate-700'}">${safeTaskTitle}</span>
                         </label>
-                        <button onclick="deleteTask('${loc.id}', '${t.id}')" title="Hapus item garapan"
+                        <button onclick="deleteTask('${safeLocId}', '${safeTaskId}')" title="Hapus item garapan"
                             class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition shrink-0">
                             <i data-lucide="x" class="w-3.5 h-3.5"></i>
                         </button>
                     </div>
-                `).join('');
+                `;
+                }).join('');
 
                 return `
                     <div ondragover="handleDragOver(event)"
                          ondragleave="handleDragLeave(event)"
-                         ondrop="handleDrop(event, '${loc.id}')"
-                         class="bg-white rounded-2xl p-4 border-2 border-stone-200/90 shadow-xs flex flex-col justify-between space-y-4 transition-all">
+                         ondrop="handleDrop(event, '${safeLocId}')"
+                         class="bg-white rounded-2xl p-3.5 sm:p-4 border-2 border-stone-200/90 shadow-xs flex flex-col justify-between space-y-4 transition-all">
                         
                         <div class="space-y-3">
                             <div class="flex items-center justify-between gap-2">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
-                                    <h4 class="text-sm font-extrabold text-slate-900 truncate">${loc.name}</h4>
+                                    <h4 class="text-sm font-extrabold text-slate-900 truncate">${safeLocName}</h4>
                                 </div>
                                 <div class="flex items-center gap-1.5 shrink-0">
                                     <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-900">
                                         ${assignedHere.length} Tukang
                                     </span>
-                                    <button onclick="deleteLocation('${loc.id}')" title="Hapus Zona Penempatan"
+                                    <button onclick="deleteLocation('${safeLocId}')" title="Hapus Zona Penempatan"
                                         class="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white transition active:scale-95">
                                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                     </button>
@@ -1565,10 +1646,10 @@
                             <div class="space-y-0.5">${tasksHtml}</div>
                             
                             <div class="flex items-center gap-1.5 pt-1">
-                                <input id="custom-task-${loc.id}" type="text" placeholder="+ Tambah item garapan..."
-                                    onkeydown="if(event.key==='Enter') addCustomTask('${loc.id}')"
-                                    class="flex-1 text-xs px-3 py-2 rounded-xl bg-stone-100 border border-transparent focus:border-blue-900 focus:bg-white focus:outline-none">
-                                <button onclick="addCustomTask('${loc.id}')" class="px-3 py-2 rounded-xl bg-stone-200 hover:bg-blue-900 hover:text-white text-slate-700 text-xs font-bold transition">
+                                <input id="custom-task-${safeLocId}" type="text" maxlength="80" placeholder="+ Tambah item garapan..."
+                                    onkeydown="if(event.key==='Enter') addCustomTask('${safeLocId}')"
+                                    class="flex-1 min-w-0 text-xs px-3 py-2 rounded-xl bg-stone-100 border border-transparent focus:border-blue-900 focus:bg-white focus:outline-none">
+                                <button onclick="addCustomTask('${safeLocId}')" class="px-3 py-2 rounded-xl bg-stone-200 hover:bg-blue-900 hover:text-white text-slate-700 text-xs font-bold transition shrink-0">
                                     Tambah
                                 </button>
                             </div>
@@ -1705,15 +1786,15 @@
                 return;
             }
             selectedWorkerForAssign = workerId;
-            document.getElementById('assign-modal-avatar').src = w.avatar || getAvatarFallback(w.nickname);
+            document.getElementById('assign-modal-avatar').src = sanitizeImageUrl(w.avatar, w.nickname);
             document.getElementById('assign-modal-name').textContent = `${w.name} (${w.role})`;
 
             const container = document.getElementById('assign-modal-locations');
             container.innerHTML = appState.locations.map(loc => `
-                <button onclick="assignWorkerToLocation('${w.id}', '${loc.id}'); closeModal('modal-assign');"
+                <button onclick="assignWorkerToLocation('${escapeHtml(w.id)}', '${escapeHtml(loc.id)}'); closeModal('modal-assign');"
                     class="w-full p-3.5 rounded-2xl border border-stone-200 hover:border-blue-900 hover:bg-blue-50/60 flex items-center justify-between text-left transition">
-                    <span class="text-sm font-extrabold text-slate-900">${loc.name}</span>
-                    <span class="text-xs font-bold text-blue-900 flex items-center gap-1">
+                    <span class="text-sm font-extrabold text-slate-900 truncate pr-2">${escapeHtml(loc.name)}</span>
+                    <span class="text-xs font-bold text-blue-900 flex items-center gap-1 shrink-0">
                         Pilih <i data-lucide="arrow-right" class="w-4 h-4"></i>
                     </span>
                 </button>
@@ -1790,8 +1871,8 @@
                     const isSelected = iso === activeScheduleDate;
                     stripHtml += `
                         <button onclick="selectScheduleDate('${iso}')"
-                            class="p-2 rounded-xl border text-center transition flex flex-col items-center justify-center ${isSelected ? 'bg-blue-900 text-white border-blue-900 shadow-xs' : 'bg-stone-50 text-slate-700 border-stone-200 hover:bg-stone-100'}">
-                            <span class="text-[10px] font-semibold opacity-80">${dayNames[d.getDay()]}</span>
+                            class="py-2 px-0.5 sm:p-2 rounded-xl border text-center transition flex flex-col items-center justify-center ${isSelected ? 'bg-blue-900 text-white border-blue-900 shadow-xs' : 'bg-stone-50 text-slate-700 border-stone-200 hover:bg-stone-100'}">
+                            <span class="text-[9px] sm:text-[10px] font-semibold opacity-80">${dayNames[d.getDay()]}</span>
                             <span class="text-xs sm:text-sm font-extrabold mt-0.5">${d.getDate()}</span>
                             <span class="w-1.5 h-1.5 rounded-full mt-1 ${count > 0 ? (isSelected ? 'bg-amber-400' : 'bg-emerald-500') : 'bg-transparent'}"></span>
                         </button>
@@ -1806,12 +1887,12 @@
             if (wSelect) {
                 wSelect.innerHTML = appState.workers.length === 0
                     ? `<option value="">-- Tambah Karyawan Dulu --</option>`
-                    : appState.workers.map(w => `<option value="${w.id}">${w.nickname} (${w.role})</option>`).join('');
+                    : appState.workers.map(w => `<option value="${escapeHtml(w.id)}">${escapeHtml(w.nickname)} (${escapeHtml(w.role)})</option>`).join('');
             }
             if (lSelect) {
                 lSelect.innerHTML = appState.locations.length === 0
                     ? `<option value="">-- Tambah Lokasi Dulu --</option>`
-                    : appState.locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+                    : appState.locations.map(l => `<option value="${escapeHtml(l.id)}">${escapeHtml(l.name)}</option>`).join('');
             }
 
             // Render list jadwal pada tanggal tersebut
@@ -1826,15 +1907,15 @@
                         const l = appState.locations.find(lc => lc.id === item.locationId);
                         if (!w || !l) return '';
                         return `
-                            <div class="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-200/80">
-                                <div class="flex items-center gap-2.5">
-                                    <img src="${w.avatar || getAvatarFallback(w.nickname)}" class="w-9 h-9 rounded-full object-cover ring-1 ring-slate-300">
-                                    <div>
-                                        <div class="text-xs font-extrabold text-slate-900">${w.name} <span class="text-slate-400 font-semibold">(${w.role})</span></div>
-                                        <div class="text-[11px] font-bold text-blue-900 mt-0.5">Lokasi: ${l.name}</div>
+                            <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-stone-50 border border-stone-200/80">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <img src="${sanitizeImageUrl(w.avatar, w.nickname)}" class="w-9 h-9 rounded-full object-cover ring-1 ring-slate-300 shrink-0">
+                                    <div class="min-w-0">
+                                        <div class="text-xs font-extrabold text-slate-900 truncate">${escapeHtml(w.name)} <span class="text-slate-400 font-semibold">(${escapeHtml(w.role)})</span></div>
+                                        <div class="text-[11px] font-bold text-blue-900 mt-0.5 truncate">Lokasi: ${escapeHtml(l.name)}</div>
                                     </div>
                                 </div>
-                                <button onclick="removeAssignment('${w.id}', '${activeScheduleDate}')" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50" title="Hapus dari jadwal">
+                                <button onclick="removeAssignment('${escapeHtml(w.id)}', '${activeScheduleDate}')" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 shrink-0" title="Hapus dari jadwal">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>
                             </div>
@@ -1873,26 +1954,27 @@
 
             grid.innerHTML = appState.workers.map(w => {
                 const isInti = w.tier === 'Inti';
+                const safeId = escapeHtml(w.id);
                 return `
-                    <div class="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs flex items-center justify-between gap-3">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-stone-200 shadow-xs flex items-center justify-between gap-3">
                         <div class="flex items-center gap-3 min-w-0">
-                            <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                            <img src="${sanitizeImageUrl(w.avatar, w.nickname)}"
                                  onerror="this.src='${getAvatarFallback(w.nickname)}'"
-                                 class="w-12 h-12 rounded-full object-cover ${isInti ? 'ring-2 ring-amber-500' : 'ring-2 ring-slate-300'} shrink-0">
+                                 class="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover ${isInti ? 'ring-2 ring-amber-500' : 'ring-2 ring-slate-300'} shrink-0">
                             <div class="min-w-0">
                                 <div class="flex items-center gap-1.5">
-                                    <h4 class="text-sm font-extrabold text-slate-900 truncate">${w.name}</h4>
-                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isInti ? 'bg-amber-100 text-amber-800' : 'bg-stone-100 text-slate-600'}">${w.tier}</span>
+                                    <h4 class="text-sm font-extrabold text-slate-900 truncate">${escapeHtml(w.name)}</h4>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${isInti ? 'bg-amber-100 text-amber-800' : 'bg-stone-100 text-slate-600'}">${escapeHtml(w.tier)}</span>
                                 </div>
-                                <div class="text-xs text-slate-500 mt-0.5">${w.role} • Harian: <strong class="text-slate-800">${formatRp(w.dailyRate)}</strong></div>
+                                <div class="text-xs text-slate-500 mt-0.5 truncate">${escapeHtml(w.role)} • Harian: <strong class="text-slate-800">${formatRp(w.dailyRate)}</strong></div>
                                 <div class="text-[11px] text-slate-400">Lembur: ${formatRp(w.overtimeRate)}/jam</div>
                             </div>
                         </div>
                         <div class="flex items-center gap-1.5 shrink-0">
-                            <button onclick="openWorkerEditModal('${w.id}')" class="p-2.5 rounded-xl bg-stone-100 hover:bg-blue-900 hover:text-white text-slate-700 transition" title="Edit Tukang">
+                            <button onclick="openWorkerEditModal('${safeId}')" class="p-2.5 rounded-xl bg-stone-100 hover:bg-blue-900 hover:text-white text-slate-700 transition" title="Edit Tukang">
                                 <i data-lucide="pencil" class="w-4 h-4"></i>
                             </button>
-                            <button onclick="deleteWorker('${w.id}')" class="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 transition" title="Hapus Tukang">
+                            <button onclick="deleteWorker('${safeId}')" class="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 transition" title="Hapus Tukang">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
                         </div>
@@ -1941,13 +2023,17 @@
 
         function saveWorkerEdit() {
             const id = document.getElementById('edit-worker-id').value;
-            const name = document.getElementById('edit-worker-name').value.trim();
-            const nickname = document.getElementById('edit-worker-nickname').value.trim() || name.split(' ')[0];
-            const role = document.getElementById('edit-worker-role').value;
-            const tier = document.getElementById('edit-worker-tier').value;
-            const dailyRate = parseInt(document.getElementById('edit-worker-daily').value, 10) || 120000;
-            const overtimeRate = parseInt(document.getElementById('edit-worker-ot').value, 10) || 20000;
-            const pin = document.getElementById('edit-worker-pin').value.trim() || '1234';
+            const name = document.getElementById('edit-worker-name').value.trim().slice(0, 60);
+            const nickname = (document.getElementById('edit-worker-nickname').value.trim() || name.split(' ')[0]).slice(0, 30);
+            const allowedRoles = ['Las', 'Sipil', 'Kernet'];
+            const roleVal = document.getElementById('edit-worker-role').value;
+            const role = allowedRoles.includes(roleVal) ? roleVal : 'Las';
+            const tierVal = document.getElementById('edit-worker-tier').value;
+            const tier = tierVal === 'Inti' ? 'Inti' : 'Rolling';
+            const dailyRate = clampMoney(document.getElementById('edit-worker-daily').value, 120000);
+            const overtimeRate = clampMoney(document.getElementById('edit-worker-ot').value, 20000);
+            const rawPin = document.getElementById('edit-worker-pin').value.replace(/\D/g, '').slice(0, 4);
+            const pin = rawPin.length === 4 ? rawPin : '1234';
 
             if (!name) {
                 showToast('Nama lengkap wajib diisi');
@@ -2025,11 +2111,11 @@
                 kasbonList.innerHTML = appState.workers.map(w => `
                     <div class="py-3 flex items-center justify-between gap-3">
                         <div class="flex items-center gap-2.5 min-w-0">
-                            <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                            <img src="${sanitizeImageUrl(w.avatar, w.nickname)}"
                                  onerror="this.src='${getAvatarFallback(w.nickname)}'"
                                  class="w-9 h-9 rounded-full object-cover shrink-0">
                             <div class="min-w-0">
-                                <div class="text-xs font-extrabold text-slate-900 truncate">${w.name}</div>
+                                <div class="text-xs font-extrabold text-slate-900 truncate">${escapeHtml(w.name)}</div>
                                 <div class="text-[11px] text-slate-500">
                                     Potongan Sabtu: <strong class="text-blue-900">${formatRp(w.weeklyDeduction)}</strong>
                                 </div>
@@ -2039,7 +2125,7 @@
                             <div class="text-xs font-extrabold ${w.kasbonBalance > 0 ? 'text-rose-600' : 'text-emerald-600'}">
                                 ${w.kasbonBalance > 0 ? formatRp(w.kasbonBalance) : 'Lunas'}
                             </div>
-                            <button onclick="openKasbonModal('${w.id}')" class="text-[10px] font-bold text-blue-900 hover:underline mt-0.5">
+                            <button onclick="openKasbonModal('${escapeHtml(w.id)}')" class="text-[10px] font-bold text-blue-900 hover:underline mt-0.5">
                                 Atur / Bon
                             </button>
                         </div>
@@ -2050,7 +2136,7 @@
             const filterSelect = document.getElementById('log-filter-worker');
             const currentFilter = filterSelect.value;
             filterSelect.innerHTML = `<option value="ALL">Semua Tukang</option>` +
-                appState.workers.map(w => `<option value="${w.id}" ${currentFilter === w.id ? 'selected' : ''}>${w.nickname}</option>`).join('');
+                appState.workers.map(w => `<option value="${escapeHtml(w.id)}" ${currentFilter === w.id ? 'selected' : ''}>${escapeHtml(w.nickname)}</option>`).join('');
 
             const logsContainer = document.getElementById('daily-logs-list');
             const sortedDates = Object.keys(appState.assignments).sort().reverse();
@@ -2064,16 +2150,16 @@
                     const l = appState.locations.find(lc => lc.id === item.locationId);
                     if (!w || !l) return;
                     logRows.push(`
-                        <div class="flex items-center justify-between p-2.5 rounded-xl bg-stone-50 border border-stone-200/70 text-xs">
-                            <div>
-                                <span class="font-extrabold text-slate-800">${w.nickname}</span>
+                        <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-stone-50 border border-stone-200/70 text-xs">
+                            <div class="min-w-0">
+                                <span class="font-extrabold text-slate-800">${escapeHtml(w.nickname)}</span>
                                 <span class="text-slate-500">di</span>
-                                <span class="font-bold text-blue-900">${l.name}</span>
+                                <span class="font-bold text-blue-900">${escapeHtml(l.name)}</span>
                                 <div class="text-[10px] text-slate-400 mt-0.5">${formatIndoDate(dateStr)}</div>
                             </div>
-                            <div class="text-right">
+                            <div class="text-right shrink-0">
                                 <span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px]">Hadir</span>
-                                ${item.overtime > 0 ? `<span class="ml-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold text-[10px]">+${item.overtime}j Lembur</span>` : ''}
+                                ${item.overtime > 0 ? `<span class="ml-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-bold text-[10px]">+${Number(item.overtime)}j Lembur</span>` : ''}
                             </div>
                         </div>
                     `);
@@ -2089,7 +2175,7 @@
                 return;
             }
             const select = document.getElementById('kasbon-worker-select');
-            select.innerHTML = appState.workers.map(w => `<option value="${w.id}">${w.name} (Sisa: ${formatRp(w.kasbonBalance)})</option>`).join('');
+            select.innerHTML = appState.workers.map(w => `<option value="${escapeHtml(w.id)}">${escapeHtml(w.name)} (Sisa: ${formatRp(w.kasbonBalance)})</option>`).join('');
             if (preselectWorkerId) select.value = preselectWorkerId;
 
             const chosen = appState.workers.find(w => w.id === select.value);
@@ -2106,14 +2192,14 @@
 
         function saveKasbonUpdate() {
             const workerId = document.getElementById('kasbon-worker-select').value;
-            const addAmt = parseInt(document.getElementById('kasbon-add-amount').value || '0', 10);
-            const weeklyCut = parseInt(document.getElementById('kasbon-weekly-cut').value || '0', 10);
+            const addAmt = clampMoney(document.getElementById('kasbon-add-amount').value, 0);
+            const weeklyCut = clampMoney(document.getElementById('kasbon-weekly-cut').value, 0);
 
             const w = appState.workers.find(wk => wk.id === workerId);
             if (!w) return;
 
-            if (addAmt > 0) w.kasbonBalance += addAmt;
-            w.weeklyDeduction = Math.max(0, weeklyCut);
+            if (addAmt > 0) w.kasbonBalance = clampMoney(w.kasbonBalance + addAmt, w.kasbonBalance);
+            w.weeklyDeduction = weeklyCut;
 
             SupabaseService.saveState(appState);
             closeModal('modal-kasbon');
@@ -2160,31 +2246,32 @@
                 const calc = calculateWorkerWeeklyPay(w);
                 grandTotal += calc.netPay;
                 if (w.paidThisWeek) paidCount++;
+                const safeId = escapeHtml(w.id);
 
                 return `
-                    <div class="bg-white rounded-2xl p-4 border ${w.paidThisWeek ? 'border-emerald-300 bg-emerald-50/30' : 'border-stone-200'} shadow-xs space-y-3">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-4 border ${w.paidThisWeek ? 'border-emerald-300 bg-emerald-50/30' : 'border-stone-200'} shadow-xs space-y-3">
                         <div class="flex items-center justify-between gap-2">
-                            <div class="flex items-center gap-3">
-                                <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                                <img src="${sanitizeImageUrl(w.avatar, w.nickname)}"
                                      onerror="this.src='${getAvatarFallback(w.nickname)}'"
-                                     class="w-10 h-10 rounded-full object-cover ${w.tier === 'Inti' ? 'ring-2 ring-amber-500' : 'ring-1 ring-slate-300'}">
-                                <div>
+                                     class="w-10 h-10 rounded-full object-cover ${w.tier === 'Inti' ? 'ring-2 ring-amber-500' : 'ring-1 ring-slate-300'} shrink-0">
+                                <div class="min-w-0">
                                     <div class="flex items-center gap-1.5">
-                                        <h4 class="text-sm font-extrabold text-slate-900">${w.name}</h4>
-                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-slate-600">${w.role}</span>
+                                        <h4 class="text-sm font-extrabold text-slate-900 truncate">${escapeHtml(w.name)}</h4>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-slate-600 shrink-0">${escapeHtml(w.role)}</span>
                                     </div>
-                                    <p class="text-[11px] text-slate-500">Rate: ${formatRp(w.dailyRate)}/hr • Lembur: ${formatRp(w.overtimeRate)}/jam</p>
+                                    <p class="text-[11px] text-slate-500 truncate">Rate: ${formatRp(w.dailyRate)}/hr • Lembur: ${formatRp(w.overtimeRate)}/jam</p>
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <div class="text-base font-extrabold text-emerald-700">${formatRp(calc.netPay)}</div>
+                            <div class="text-right shrink-0">
+                                <div class="text-sm sm:text-base font-extrabold text-emerald-700">${formatRp(calc.netPay)}</div>
                                 <span class="text-[10px] font-bold ${w.paidThisWeek ? 'text-emerald-600' : 'text-amber-600'}">
                                     ${w.paidThisWeek ? '✓ Sudah Dibayar' : 'Menunggu Payout'}
                                 </span>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-3 gap-2 bg-stone-50 p-2.5 rounded-xl text-[11px] border border-stone-100">
+                        <div class="grid grid-cols-3 gap-1.5 sm:gap-2 bg-stone-50 p-2.5 rounded-xl text-[11px] border border-stone-100">
                             <div>
                                 <span class="text-slate-400 block">Masuk (${calc.daysWorked}h)</span>
                                 <span class="font-bold text-slate-800">${formatRp(calc.basePay)}</span>
@@ -2200,13 +2287,13 @@
                         </div>
 
                         <div class="flex items-center gap-2 pt-1">
-                            <button onclick="togglePaidStatus('${w.id}')"
-                                class="flex-1 py-2.5 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 ${w.paidThisWeek ? 'bg-stone-200 text-slate-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'}">
-                                <i data-lucide="${w.paidThisWeek ? 'rotate-ccw' : 'check-circle-2'}" class="w-4 h-4"></i>
-                                <span>${w.paidThisWeek ? 'Batalkan Status Bayar' : 'Tandai Sudah Dibayar'}</span>
+                            <button onclick="togglePaidStatus('${safeId}')"
+                                class="flex-1 py-2.5 px-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition active:scale-95 ${w.paidThisWeek ? 'bg-stone-200 text-slate-700' : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'}">
+                                <i data-lucide="${w.paidThisWeek ? 'rotate-ccw' : 'check-circle-2'}" class="w-4 h-4 shrink-0"></i>
+                                <span class="truncate">${w.paidThisWeek ? 'Batalkan Status Bayar' : 'Tandai Sudah Dibayar'}</span>
                             </button>
-                            <button onclick="copySingleSlip('${w.id}')"
-                                class="px-3.5 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 text-xs font-bold flex items-center gap-1 transition">
+                            <button onclick="copySingleSlip('${safeId}')"
+                                class="px-3.5 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-900 text-xs font-bold flex items-center gap-1 transition shrink-0">
                                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
                                 <span>Slip WA</span>
                             </button>
@@ -2286,13 +2373,13 @@
             }
 
             grid.innerHTML = appState.workers.map(w => `
-                <button onclick="openPinModal('${w.id}')"
+                <button onclick="openPinModal('${escapeHtml(w.id)}')"
                     class="tactile-card bg-white p-3 rounded-2xl border border-stone-200 shadow-xs flex flex-col items-center text-center hover:border-blue-900 transition">
-                    <img src="${w.avatar || getAvatarFallback(w.nickname)}"
+                    <img src="${sanitizeImageUrl(w.avatar, w.nickname)}"
                          onerror="this.src='${getAvatarFallback(w.nickname)}'"
                          class="w-14 h-14 rounded-full object-cover ${w.tier === 'Inti' ? 'ring-2 ring-amber-500' : 'ring-2 ring-slate-200'}">
-                    <span class="text-xs font-extrabold text-slate-900 mt-2 truncate w-full">${w.nickname}</span>
-                    <span class="text-[10px] font-semibold text-slate-400">${w.role}</span>
+                    <span class="text-xs font-extrabold text-slate-900 mt-2 truncate w-full">${escapeHtml(w.nickname)}</span>
+                    <span class="text-[10px] font-semibold text-slate-400">${escapeHtml(w.role)}</span>
                 </button>
             `).join('');
         }
@@ -2302,8 +2389,10 @@
             if (!w) return;
             pinTargetWorkerId = workerId;
             enteredPin = '';
-            document.getElementById('pin-worker-avatar').src = w.avatar || getAvatarFallback(w.nickname);
+            document.getElementById('pin-worker-avatar').src = sanitizeImageUrl(w.avatar, w.nickname);
             document.getElementById('pin-worker-name').textContent = w.name;
+            const sub = document.getElementById('pin-modal-subtitle');
+            if (sub) sub.textContent = 'Masukkan 4 digit PIN Anda';
             updatePinDots();
             document.getElementById('modal-pin').classList.remove('hidden');
         }
@@ -2318,6 +2407,13 @@
         }
 
         function pressPin(digit) {
+            if (!/^\d$/.test(String(digit))) return;
+            const now = Date.now();
+            if (now < workerPinLockoutUntil) {
+                const rem = Math.ceil((workerPinLockoutUntil - now) / 1000);
+                showToast(`Terkunci sementara. Tunggu ${rem} detik.`);
+                return;
+            }
             if (enteredPin.length >= 4) return;
             enteredPin += digit;
             updatePinDots();
@@ -2325,13 +2421,21 @@
             if (enteredPin.length === 4) {
                 const w = appState.workers.find(wk => wk.id === pinTargetWorkerId);
                 if (w && enteredPin === (w.pin || '1234')) {
+                    workerPinAttempts = 0;
                     setTimeout(() => {
                         closeModal('modal-pin');
                         loggedInWorkerId = w.id;
                         renderWorkerDashboard(w.id);
                     }, 180);
                 } else {
-                    showToast('PIN salah! Coba lagi');
+                    workerPinAttempts += 1;
+                    if (workerPinAttempts >= 5) {
+                        workerPinLockoutUntil = Date.now() + 15000;
+                        workerPinAttempts = 0;
+                        showToast('PIN salah 5x. Tunggu 15 detik.');
+                    } else {
+                        showToast('PIN salah! Coba lagi');
+                    }
                     setTimeout(() => {
                         enteredPin = '';
                         updatePinDots();
@@ -2374,10 +2478,10 @@
                 locNameEl.textContent = loc.name;
                 tasksListEl.innerHTML = loc.tasks.map(t => `
                     <li class="flex items-center gap-2">
-                        <span class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${t.done ? 'bg-emerald-600 text-white' : 'bg-white border border-blue-300 text-blue-900'}">
+                        <span class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] shrink-0 ${t.done ? 'bg-emerald-600 text-white' : 'bg-white border border-blue-300 text-blue-900'}">
                             ${t.done ? '✓' : '•'}
                         </span>
-                        <span class="${t.done ? 'line-through text-slate-400' : 'font-semibold text-slate-800'}">${t.title}</span>
+                        <span class="${t.done ? 'line-through text-slate-400' : 'font-semibold text-slate-800'}">${escapeHtml(t.title)}</span>
                     </li>
                 `).join('');
             } else {
@@ -2401,7 +2505,7 @@
             if (myPhotoLog) {
                 badge.textContent = `Hadir • ${myPhotoLog.time}`;
                 badge.className = 'text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800';
-                document.getElementById('wd-captured-img').src = myPhotoLog.photoDataUrl;
+                document.getElementById('wd-captured-img').src = sanitizeImageUrl(myPhotoLog.photoDataUrl, w.nickname);
                 document.getElementById('wd-captured-loc').textContent = myPhotoLog.locationName;
                 document.getElementById('wd-captured-time').textContent = myPhotoLog.time;
                 resultBox.classList.remove('hidden');
@@ -2598,26 +2702,32 @@
 
             grid.innerHTML = photos.map(item => {
                 const w = appState.workers.find(wk => wk.id === item.workerId);
+                const safeWId = escapeHtml(item.workerId);
+                const safeWName = escapeHtml(item.workerName);
+                const safeLocName = escapeHtml(item.locationName);
+                const safeTime = escapeHtml(item.time);
+                const safePhotoUrl = sanitizeImageUrl(item.photoDataUrl, item.workerName);
+                const safeAvatarUrl = sanitizeImageUrl(w && w.avatar, item.workerName);
                 return `
                     <div class="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden flex flex-col">
                         <div class="relative aspect-[4/3] bg-stone-100">
-                            <img src="${item.photoDataUrl}" alt="Absen ${item.workerName}" class="w-full h-full object-cover">
+                            <img src="${safePhotoUrl}" alt="Absen ${safeWName}" class="w-full h-full object-cover">
                             <span class="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold shadow-xs">
-                                HADIR • ${item.time}
+                                HADIR • ${safeTime}
                             </span>
-                            <button onclick="deleteAttendancePhoto('${item.workerId}', '${activeAttendanceDate}')" title="Hapus Data Foto Absen"
+                            <button onclick="deleteAttendancePhoto('${safeWId}', '${activeAttendanceDate}')" title="Hapus Data Foto Absen"
                                 class="absolute top-2.5 right-2.5 p-2 rounded-full bg-rose-600/90 hover:bg-rose-700 text-white shadow-md transition active:scale-95">
                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>
                         <div class="p-3.5 flex items-center justify-between gap-2">
                             <div class="flex items-center gap-2.5 min-w-0">
-                                <img src="${(w && w.avatar) || getAvatarFallback(item.workerName)}"
+                                <img src="${safeAvatarUrl}"
                                      onerror="this.src='${getAvatarFallback(item.workerName)}'"
                                      class="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-500 shrink-0">
                                 <div class="min-w-0">
-                                    <h4 class="text-sm font-extrabold text-slate-900 truncate">${item.workerName}</h4>
-                                    <p class="text-[11px] font-semibold text-blue-900 truncate">${item.locationName}</p>
+                                    <h4 class="text-sm font-extrabold text-slate-900 truncate">${safeWName}</h4>
+                                    <p class="text-[11px] font-semibold text-blue-900 truncate">${safeLocName}</p>
                                 </div>
                             </div>
                         </div>
@@ -2658,6 +2768,16 @@
             updateBosVisibility();
             SupabaseService.init();
             renderAll();
+
+            // Support keyboard keypad saat modal PIN terbuka di tablet/laptop
+            window.addEventListener('keydown', (e) => {
+                const pinModal = document.getElementById('modal-pin');
+                if (pinModal && !pinModal.classList.contains('hidden')) {
+                    if (/^[0-9]$/.test(e.key)) pressPin(e.key);
+                    else if (e.key === 'Backspace') clearPin();
+                    else if (e.key === 'Escape') closeModal('modal-pin');
+                }
+            });
         });
     </script>
 </body>
