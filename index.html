@@ -719,7 +719,30 @@
                 </button>
             </div>
             <input type="hidden" id="edit-worker-id">
+            <input type="hidden" id="edit-worker-avatar-data">
             <div class="space-y-3">
+                <!-- Upload Foto Wajah Tukang dari Galeri -->
+                <div class="flex items-center gap-3.5 p-3 rounded-2xl bg-stone-50 border border-stone-200/80">
+                    <img id="edit-worker-avatar-preview" src="https://ui-avatars.com/api/?name=T&background=1E3A8A&color=fff&bold=true"
+                        alt="Preview Wajah" class="w-16 h-16 rounded-full object-cover ring-2 ring-blue-900 shrink-0 bg-white">
+                    <div class="flex-1 min-w-0 space-y-1.5">
+                        <div class="text-xs font-extrabold text-slate-800">Foto Wajah Tukang</div>
+                        <p class="text-[11px] text-slate-500 leading-tight">Pilih foto dari galeri HP untuk profil & layar absen</p>
+                        <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                            <button type="button" onclick="document.getElementById('edit-worker-photo-file').click()"
+                                class="px-3 py-1.5 rounded-xl bg-blue-900 hover:bg-blue-950 text-white text-[11px] font-bold flex items-center gap-1 transition active:scale-95">
+                                <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                                <span>Pilih dari Galeri</span>
+                            </button>
+                            <button type="button" id="btn-reset-worker-photo" onclick="resetWorkerPhotoPreview()"
+                                class="hidden px-2.5 py-1.5 rounded-xl bg-stone-200 hover:bg-stone-300 text-slate-700 text-[11px] font-bold transition">
+                                Reset
+                            </button>
+                        </div>
+                        <input type="file" id="edit-worker-photo-file" accept="image/*" class="hidden" onchange="handleWorkerPhotoUpload(event)">
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap</label>
@@ -1997,6 +2020,10 @@
         function openWorkerEditModal(workerId = null) {
             const titleEl = document.getElementById('worker-modal-title');
             const idEl = document.getElementById('edit-worker-id');
+            const avatarDataEl = document.getElementById('edit-worker-avatar-data');
+            const avatarPreviewEl = document.getElementById('edit-worker-avatar-preview');
+            const resetPhotoBtn = document.getElementById('btn-reset-worker-photo');
+            const fileInput = document.getElementById('edit-worker-photo-file');
             const nameEl = document.getElementById('edit-worker-name');
             const nickEl = document.getElementById('edit-worker-nickname');
             const roleEl = document.getElementById('edit-worker-role');
@@ -2004,6 +2031,8 @@
             const dailyEl = document.getElementById('edit-worker-daily');
             const otEl = document.getElementById('edit-worker-ot');
             const pinEl = document.getElementById('edit-worker-pin');
+
+            if (fileInput) fileInput.value = '';
 
             if (workerId) {
                 const w = appState.workers.find(wk => wk.id === workerId);
@@ -2017,6 +2046,10 @@
                 dailyEl.value = w.dailyRate;
                 otEl.value = w.overtimeRate;
                 pinEl.value = w.pin || '1234';
+                const currentAvatar = sanitizeImageUrl(w.avatar, w.nickname);
+                avatarDataEl.value = currentAvatar.startsWith('data:image/') ? currentAvatar : '';
+                avatarPreviewEl.src = currentAvatar;
+                if (resetPhotoBtn) resetPhotoBtn.classList.toggle('hidden', !avatarDataEl.value);
             } else {
                 titleEl.textContent = 'Tambah Tukang Baru';
                 idEl.value = '';
@@ -2027,9 +2060,54 @@
                 dailyEl.value = 130000;
                 otEl.value = 20000;
                 pinEl.value = '1234';
+                avatarDataEl.value = '';
+                avatarPreviewEl.src = getAvatarFallback('T');
+                if (resetPhotoBtn) resetPhotoBtn.classList.add('hidden');
             }
 
             document.getElementById('modal-worker-edit').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function handleWorkerPhotoUpload(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    // Crop persegi tengah (240x240) & kompres JPEG agar ringan di database cloud
+                    const size = 240;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    const minSide = Math.min(img.width, img.height);
+                    const sx = (img.width - minSide) / 2;
+                    const sy = (img.height - minSide) / 2;
+                    ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.78);
+                    document.getElementById('edit-worker-avatar-data').value = compressedDataUrl;
+                    document.getElementById('edit-worker-avatar-preview').src = compressedDataUrl;
+                    const resetBtn = document.getElementById('btn-reset-worker-photo');
+                    if (resetBtn) resetBtn.classList.remove('hidden');
+                    showToast('Foto wajah berhasil dipilih dari galeri');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetWorkerPhotoPreview() {
+            const nick = document.getElementById('edit-worker-nickname').value.trim() ||
+                         document.getElementById('edit-worker-name').value.trim() || 'T';
+            document.getElementById('edit-worker-avatar-data').value = '';
+            document.getElementById('edit-worker-avatar-preview').src = getAvatarFallback(nick);
+            const fileInput = document.getElementById('edit-worker-photo-file');
+            if (fileInput) fileInput.value = '';
+            const resetBtn = document.getElementById('btn-reset-worker-photo');
+            if (resetBtn) resetBtn.classList.add('hidden');
         }
 
         function saveWorkerEdit() {
@@ -2045,11 +2123,16 @@
             const overtimeRate = clampMoney(document.getElementById('edit-worker-ot').value, 20000);
             const rawPin = document.getElementById('edit-worker-pin').value.replace(/\D/g, '').slice(0, 4);
             const pin = rawPin.length === 4 ? rawPin : '1234';
+            const uploadedAvatar = document.getElementById('edit-worker-avatar-data').value.trim();
 
             if (!name) {
                 showToast('Nama lengkap wajib diisi');
                 return;
             }
+
+            const finalAvatar = uploadedAvatar.startsWith('data:image/')
+                ? uploadedAvatar
+                : getAvatarFallback(nickname);
 
             if (id) {
                 const idx = appState.workers.findIndex(w => w.id === id);
@@ -2063,7 +2146,7 @@
                         dailyRate,
                         overtimeRate,
                         pin,
-                        avatar: getAvatarFallback(nickname)
+                        avatar: finalAvatar
                     };
                     showToast(`Data ${nickname} diperbarui`);
                 }
@@ -2080,7 +2163,7 @@
                     weeklyDeduction: 0,
                     pin,
                     paidThisWeek: false,
-                    avatar: getAvatarFallback(nickname)
+                    avatar: finalAvatar
                 });
                 showToast(`${nickname} ditambahkan ke tim`);
             }
