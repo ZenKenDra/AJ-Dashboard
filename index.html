@@ -83,7 +83,14 @@
                     <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 leading-none">
                         AdiJaya <span class="text-[#F94D00]">Dasboard</span>
                     </h1>
-                    <p class="text-[10px] font-bold tracking-wider uppercase text-slate-500 mt-0.5">Welding & Construction</p>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <p class="text-[10px] font-bold tracking-wider uppercase text-slate-500">Welding & Construction</p>
+                        <button id="db-live-indicator" onclick="promptSupabaseUrl()" title="Status Koneksi Cloud Supabase"
+                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800 cursor-pointer transition">
+                            <span id="db-live-dot" class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            <span id="db-live-text">Set URL Cloud</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -769,44 +776,102 @@
         </div>
     </div>
 
+    <!-- Modal 6: Konfigurasi 1x URL Project Supabase -->
+    <div id="modal-sb-url" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-extrabold text-slate-900">Hubungkan URL Project Supabase</h3>
+                <button onclick="closeModal('modal-sb-url')" class="p-2 rounded-full bg-stone-100 text-slate-500">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">
+                API Key Anda sudah tertanam. Masukkan <strong>Project URL</strong> dari menu <em>Project Settings &rarr; Data API</em> di Supabase (contoh: <code>https://abcdefgh.supabase.co</code>) agar seluruh HP Tukang & Bos tersinkron otomatis:
+            </p>
+            <input id="input-sb-url" type="url" placeholder="https://xxxx.supabase.co"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-mono focus:outline-none focus:border-blue-900">
+            <div class="flex flex-col gap-2">
+                <button onclick="saveSupabaseUrlAndConnect()" class="w-full py-3 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-extrabold text-xs transition">
+                    Simpan & Sinkronkan ke Supabase Sekarang
+                </button>
+                <button onclick="copyShareableWorkerLink()" class="w-full py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-200 transition">
+                    <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+                    <span>Salin Link Siap Pakai untuk HP Tukang</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ===================================================================== -->
     <!-- JAVASCRIPT LOGIC & EMBEDDED ALWAYS-OPEN DATABASE ENGINE               -->
     <!-- ===================================================================== -->
     <script>
         /**
          * ====================================================================
-         * SUPABASE & EMBEDDED ALWAYS-OPEN DATABASE ENGINE
-         * Seluruh kredensial & engine penyimpanan ditanam langsung (Always Open)
-         * menggunakan kombinasi IndexedDB (kapasitas besar untuk foto selfie),
-         * localStorage, BroadcastChannel (sinkronisasi antar-tab instan),
-         * dan koneksi otomatis Supabase tanpa perlu popup/setting manual.
+         * SUPABASE & EMBEDDED ALWAYS-OPEN DATABASE ENGINE (MULTI-DEVICE)
          * ====================================================================
+         * 1. Ganti DEFAULT_SUPABASE_URL di bawah dengan Project URL Supabase Anda
+         *    (atau bagikan link dengan parameter ?sb_url=https://xxxx.supabase.co)
+         * 2. Hosting file index.html ini secara gratis di Netlify Drop / Vercel /
+         *    GitHub Pages agar bisa dibuka dari semua HP Tukang via internet.
          */
+        const DEFAULT_SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+
+        // Otomatis tangkap ?sb_url=... dari link yang dibagikan Bos ke HP Tukang
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramSbUrl = urlParams.get('sb_url');
+        if (paramSbUrl && paramSbUrl.startsWith('https://') && paramSbUrl.includes('.supabase.co')) {
+            localStorage.setItem('adijaya_sb_url', paramSbUrl.replace(/\/+$/, ''));
+        }
+
         const SupabaseService = {
             config: {
-                url: localStorage.getItem('adijaya_sb_url') || 'https://adijaya-db.supabase.co',
+                url: localStorage.getItem('adijaya_sb_url') || DEFAULT_SUPABASE_URL,
                 publishableKey: 'sb_publishable_iCz_3K5XTTOIF6KFGMVM3g_R7AhicN6',
                 secretKey: 'sb_secret_2Xfpho4U4kIKmUqz1uPogg_5HdaOKaV',
                 dbName: 'AdiJayaEmbeddedDB',
                 storeName: 'operational_state',
-                isAlwaysOpen: true
+                isCloudConnected: false
             },
             dbInstance: null,
             channel: typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('adijaya_live_sync') : null,
             sbClient: null,
+            pollTimer: null,
+            lastCloudUpdatedAt: null,
+
+            hasValidUrl() {
+                return Boolean(
+                    this.config.url &&
+                    this.config.url.startsWith('https://') &&
+                    this.config.url.includes('.supabase.co') &&
+                    !this.config.url.includes('YOUR_PROJECT_ID')
+                );
+            },
+
+            updateIndicator(status, label) {
+                const badge = document.getElementById('db-live-indicator');
+                const dot = document.getElementById('db-live-dot');
+                const text = document.getElementById('db-live-text');
+                if (!badge || !dot || !text) return;
+
+                if (status === 'online') {
+                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 cursor-pointer transition';
+                    dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse';
+                    text.textContent = label || 'Supabase Terhubung';
+                } else if (status === 'error') {
+                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-100 text-rose-800 cursor-pointer transition';
+                    dot.className = 'w-1.5 h-1.5 rounded-full bg-rose-600';
+                    text.textContent = label || 'Cek SQL / URL';
+                } else {
+                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800 cursor-pointer transition';
+                    dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
+                    text.textContent = label || 'Set URL Cloud';
+                }
+            },
 
             async init() {
-                // 1. Inisialisasi klien Supabase yang sudah tertanam
-                if (window.supabase && this.config.url.startsWith('https://') && !this.config.url.includes('adijaya-db.supabase.co')) {
-                    try {
-                        this.sbClient = window.supabase.createClient(this.config.url, this.config.publishableKey);
-                    } catch (e) {}
-                }
-
-                // 2. Buka koneksi IndexedDB Always-Open
+                // 1. Buka koneksi IndexedDB lokal sebagai cache cepat
                 await this.openIndexedDB();
-
-                // 3. Muat state terbaru dari IndexedDB jika ada
                 const idbState = await this.readFromIndexedDB();
                 if (idbState) {
                     appState = idbState;
@@ -814,7 +879,14 @@
                     renderAll();
                 }
 
-                // 4. Dengarkan perubahan real-time antar tab (misal Bos & HP Tukang dibuka bersamaan)
+                // 2. Hubungkan ke Cloud Supabase jika Project URL sudah valid
+                if (window.supabase && this.hasValidUrl()) {
+                    await this.connectAndPullCloud();
+                } else {
+                    this.updateIndicator('setup', 'Klik Set URL Cloud');
+                }
+
+                // 3. Sinkronisasi antar-tab lokal
                 if (this.channel) {
                     this.channel.onmessage = (event) => {
                         if (event.data && event.data.type === 'STATE_UPDATED') {
@@ -826,6 +898,197 @@
                             }
                         }
                     };
+                }
+            },
+
+            async connectAndPullCloud() {
+                try {
+                    this.sbClient = window.supabase.createClient(this.config.url, this.config.publishableKey);
+
+                    // Ambil data terbaru dari tabel app_state_sync di Supabase
+                    const { data, error } = await this.sbClient
+                        .from('app_state_sync')
+                        .select('state_data, updated_at')
+                        .eq('id', 'main_state')
+                        .maybeSingle();
+
+                    if (error) throw error;
+
+                    this.config.isCloudConnected = true;
+                    this.updateIndicator('online', 'Live Multi-HP');
+
+                    const cloudState = data && data.state_data ? data.state_data : null;
+                    if (data && data.updated_at) this.lastCloudUpdatedAt = data.updated_at;
+
+                    const cloudHasData = cloudState && (
+                        (cloudState.workers && cloudState.workers.length > 0) ||
+                        (cloudState.locations && cloudState.locations.length > 0)
+                    );
+                    const localHasData = (appState.workers && appState.workers.length > 0) ||
+                                         (appState.locations && appState.locations.length > 0);
+
+                    if (cloudHasData) {
+                        this.applyCloudState(cloudState);
+                    } else if (localHasData) {
+                        // Jika Cloud masih kosong tapi di lokal sudah ada isinya, langsung dorong ke Supabase!
+                        await this.pushToSupabaseCloud(appState);
+                    }
+
+                    // Aktifkan Realtime Listener + Polling otomatis tiap 5 detik untuk semua HP
+                    this.startLiveMultiDeviceSync();
+                } catch (err) {
+                    console.warn('Supabase Cloud belum siap:', err.message || err);
+                    this.config.isCloudConnected = false;
+                    this.updateIndicator('error', 'Jalankan SQL / Cek URL');
+                }
+            },
+
+            applyCloudState(cloudState) {
+                appState = {
+                    workers: cloudState.workers || [],
+                    locations: cloudState.locations || [],
+                    assignments: cloudState.assignments || { '2026-11-14': [] },
+                    attendancePhotos: cloudState.attendancePhotos || {}
+                };
+                localStorage.setItem('adijaya_dasboard_v3', JSON.stringify(appState));
+                this.writeToIndexedDB(appState);
+                renderAll();
+                if (activeRole === 'tukang') {
+                    if (loggedInWorkerId) {
+                        renderWorkerDashboard(loggedInWorkerId);
+                    } else {
+                        renderWorkerLoginGrid();
+                    }
+                }
+            },
+
+            startLiveMultiDeviceSync() {
+                if (!this.sbClient) return;
+
+                // 1. Supabase Realtime Subscription (instan saat HP lain update)
+                try {
+                    this.sbClient
+                        .channel('adijaya-cloud-sync')
+                        .on('postgres_changes', {
+                            event: '*',
+                            schema: 'public',
+                            table: 'app_state_sync',
+                            filter: 'id=eq.main_state'
+                        }, (payload) => {
+                            if (payload.new && payload.new.state_data) {
+                                this.lastCloudUpdatedAt = payload.new.updated_at || new Date().toISOString();
+                                this.applyCloudState(payload.new.state_data);
+                            }
+                        })
+                        .subscribe();
+                } catch (e) {}
+
+                // 2. Auto-Polling setiap 5 detik sebagai cadangan jika koneksi HP sempat terputus
+                if (this.pollTimer) clearInterval(this.pollTimer);
+                this.pollTimer = setInterval(async () => {
+                    if (document.hidden || !this.sbClient) return;
+                    try {
+                        const { data } = await this.sbClient
+                            .from('app_state_sync')
+                            .select('state_data, updated_at')
+                            .eq('id', 'main_state')
+                            .maybeSingle();
+
+                        if (data && data.updated_at && data.updated_at !== this.lastCloudUpdatedAt) {
+                            this.lastCloudUpdatedAt = data.updated_at;
+                            if (data.state_data) this.applyCloudState(data.state_data);
+                        }
+                    } catch (e) {}
+                }, 5000);
+            },
+
+            async pushToSupabaseCloud(state) {
+                if (!this.sbClient || !this.hasValidUrl()) return;
+                try {
+                    // A. Simpan snapshot state utuh ke app_state_sync
+                    const { error: syncErr } = await this.sbClient
+                        .from('app_state_sync')
+                        .upsert({
+                            id: 'main_state',
+                            state_data: state,
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'id' });
+
+                    if (syncErr) throw syncErr;
+
+                    // B. Sinkronkan ke tabel relasional workers
+                    if (Array.isArray(state.workers) && state.workers.length > 0) {
+                        const workerRows = state.workers.map(w => ({
+                            id: String(w.id),
+                            name: w.name,
+                            nickname: w.nickname,
+                            avatar_url: w.avatar || '',
+                            role: w.role || 'Las',
+                            tier: w.tier || 'Rolling',
+                            daily_rate: Number(w.dailyRate) || 120000,
+                            overtime_rate: Number(w.overtimeRate) || 20000,
+                            pin_code: String(w.pin || '1234'),
+                            active_kasbon: Number(w.kasbonBalance) || 0,
+                            weekly_deduction: Number(w.weeklyDeduction) || 0,
+                            paid_this_week: Boolean(w.paidThisWeek)
+                        }));
+                        await this.sbClient.from('workers').upsert(workerRows, { onConflict: 'id' });
+                    }
+
+                    // C. Sinkronkan ke tabel relasional locations
+                    if (Array.isArray(state.locations) && state.locations.length > 0) {
+                        const locRows = state.locations.map(l => ({
+                            id: String(l.id),
+                            name: l.name,
+                            status: 'Aktif',
+                            tasks: l.tasks || []
+                        }));
+                        await this.sbClient.from('locations').upsert(locRows, { onConflict: 'id' });
+                    }
+
+                    // D. Sinkronkan ke tabel relasional daily_assignments
+                    const assignRows = [];
+                    Object.entries(state.assignments || {}).forEach(([dateStr, list]) => {
+                        (list || []).forEach(a => {
+                            assignRows.push({
+                                id: `${dateStr}_${a.workerId}`,
+                                work_date: dateStr,
+                                worker_id: String(a.workerId),
+                                location_id: String(a.locationId),
+                                overtime_hours: Number(a.overtime) || 0
+                            });
+                        });
+                    });
+                    if (assignRows.length > 0) {
+                        await this.sbClient.from('daily_assignments').upsert(assignRows, { onConflict: 'id' });
+                    }
+
+                    // E. Sinkronkan ke tabel relasional attendance_photos
+                    const photoRows = [];
+                    Object.entries(state.attendancePhotos || {}).forEach(([dateStr, list]) => {
+                        (list || []).forEach(p => {
+                            photoRows.push({
+                                id: `att_${dateStr}_${p.workerId}`,
+                                work_date: dateStr,
+                                worker_id: String(p.workerId),
+                                worker_name: p.workerName || '',
+                                worker_role: p.workerRole || '',
+                                location_name: p.locationName || '',
+                                checkin_time: p.time || '',
+                                photo_url: p.photoDataUrl || ''
+                            });
+                        });
+                    });
+                    if (photoRows.length > 0) {
+                        await this.sbClient.from('attendance_photos').upsert(photoRows, { onConflict: 'id' });
+                    }
+
+                    this.config.isCloudConnected = true;
+                    this.lastCloudUpdatedAt = new Date().toISOString();
+                    this.updateIndicator('online', 'Live Multi-HP');
+                } catch (e) {
+                    console.warn('Gagal kirim ke tabel Supabase:', e.message || e);
+                    this.updateIndicator('error', 'Cek SQL / URL');
                 }
             },
 
@@ -872,22 +1135,20 @@
             },
 
             saveState(state) {
-                // Simpan ke localStorage
                 try {
                     localStorage.setItem('adijaya_dasboard_v3', JSON.stringify(state));
-                } catch (e) {
-                    console.warn('Storage fallback to IndexedDB:', e);
-                }
+                } catch (e) {}
 
-                // Simpan ke IndexedDB Always-Open
                 this.writeToIndexedDB(state);
 
-                // Broadcast instan ke tab lain yang sedang terbuka
                 if (this.channel) {
                     try {
                         this.channel.postMessage({ type: 'STATE_UPDATED', payload: state });
                     } catch (e) {}
                 }
+
+                // Langsung kirim perubahan ke tabel Supabase Cloud
+                this.pushToSupabaseCloud(state);
             },
 
             loadState() {
@@ -898,6 +1159,45 @@
                 return structuredClone(DEFAULT_STATE);
             }
         };
+
+        function promptSupabaseUrl() {
+            const input = document.getElementById('input-sb-url');
+            if (input) {
+                input.value = SupabaseService.hasValidUrl() ? SupabaseService.config.url : '';
+            }
+            document.getElementById('modal-sb-url').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        async function saveSupabaseUrlAndConnect() {
+            const val = document.getElementById('input-sb-url').value.trim().replace(/\/+$/, '');
+            if (!val.startsWith('https://') || !val.includes('.supabase.co')) {
+                showToast('Format URL harus https://xxxx.supabase.co');
+                return;
+            }
+            localStorage.setItem('adijaya_sb_url', val);
+            SupabaseService.config.url = val;
+            closeModal('modal-sb-url');
+            showToast('Menghubungkan ke Supabase...');
+            await SupabaseService.connectAndPullCloud();
+            await SupabaseService.pushToSupabaseCloud(appState);
+            showToast('Tersambung & tersinkron ke semua HP!');
+        }
+
+        function copyShareableWorkerLink() {
+            const sbUrl = SupabaseService.hasValidUrl()
+                ? SupabaseService.config.url
+                : document.getElementById('input-sb-url').value.trim().replace(/\/+$/, '');
+
+            if (!sbUrl || !sbUrl.startsWith('https://')) {
+                showToast('Isi Project URL Supabase terlebih dahulu');
+                return;
+            }
+            const baseUrl = window.location.origin + window.location.pathname;
+            const shareLink = `${baseUrl}?sb_url=${encodeURIComponent(sbUrl)}`;
+            copyTextToClipboard(shareLink);
+            showToast('Link multi-HP disalin! Kirim ke grup WA tukang');
+        }
 
         /**
          * ====================================================================
