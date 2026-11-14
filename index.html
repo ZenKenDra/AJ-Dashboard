@@ -863,7 +863,9 @@
 
             async connectAndPullCloud() {
                 try {
-                    this.sbClient = window.supabase.createClient(this.config.url, this.config.publishableKey);
+                    this.sbClient = window.supabase.createClient(this.config.url, this.config.publishableKey, {
+                        realtime: { params: { eventsPerSecond: 0 } }
+                    });
 
                     // Ambil data terbaru dari tabel app_state_sync di Supabase
                     const { data, error } = await this.sbClient
@@ -894,7 +896,7 @@
                         await this.pushToSupabaseCloud(appState);
                     }
 
-                    // Aktifkan Realtime Listener + Polling otomatis tiap 5 detik untuk semua HP
+                    // Aktifkan HTTPS REST Polling otomatis tiap 4 detik (aman dari blokir WebSocket iframe)
                     this.startLiveMultiDeviceSync();
                 } catch (err) {
                     console.warn('Supabase Cloud belum siap:', err.message || err);
@@ -925,25 +927,7 @@
             startLiveMultiDeviceSync() {
                 if (!this.sbClient) return;
 
-                // 1. Supabase Realtime Subscription (instan saat HP lain update)
-                try {
-                    this.sbClient
-                        .channel('adijaya-cloud-sync')
-                        .on('postgres_changes', {
-                            event: '*',
-                            schema: 'public',
-                            table: 'app_state_sync',
-                            filter: 'id=eq.main_state'
-                        }, (payload) => {
-                            if (payload.new && payload.new.state_data) {
-                                this.lastCloudUpdatedAt = payload.new.updated_at || new Date().toISOString();
-                                this.applyCloudState(payload.new.state_data);
-                            }
-                        })
-                        .subscribe();
-                } catch (e) {}
-
-                // 2. Auto-Polling setiap 5 detik sebagai cadangan jika koneksi HP sempat terputus
+                // HTTPS REST Polling setiap 4 detik untuk sinkronisasi antar-HP tanpa WebSocket
                 if (this.pollTimer) clearInterval(this.pollTimer);
                 this.pollTimer = setInterval(async () => {
                     if (document.hidden || !this.sbClient) return;
@@ -959,7 +943,7 @@
                             if (data.state_data) this.applyCloudState(data.state_data);
                         }
                     } catch (e) {}
-                }, 5000);
+                }, 4000);
             },
 
             async pushToSupabaseCloud(state) {
