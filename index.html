@@ -6,7 +6,13 @@
     <meta name="theme-color" content="#FAF9F6">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AdiJaya">
     <title>AdiJaya Dasboard — Operasional & Payroll Bengkel Las</title>
+
+    <!-- Ikon Aplikasi Layar Utama (iOS Apple Touch Icon, Favicon & PWA Manifest Logo AJ) -->
+    <link id="apple-touch-icon" rel="apple-touch-icon" sizes="512x512" href="">
+    <link id="app-favicon" rel="icon" type="image/png" href="">
+    <link id="pwa-manifest" rel="manifest" href="">
     
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -82,7 +88,7 @@
     <!-- TOP STICKY HEADER & ROLE SWITCHER                                     -->
     <!-- ===================================================================== -->
     <header class="sticky top-0 z-30 bg-[#FAF9F6]/95 backdrop-blur-md border-b border-stone-200/80 safe-header">
-        <div class="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+        <div class="max-w-4xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-1.5 sm:gap-2">
             <!-- Brand Identity dengan Logo Custom AJ -->
             <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
                 <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-[#181818] flex items-center justify-center shadow-sm border border-stone-800 shrink-0 p-1.5">
@@ -98,7 +104,7 @@
                         AdiJaya <span class="text-[#F94D00]">Dasboard</span>
                     </h1>
                     <div class="flex items-center gap-1.5 mt-1">
-                        <p class="hidden min-[380px]:block text-[9px] sm:text-[10px] font-bold tracking-wider uppercase text-slate-500 truncate">Welding & Construction</p>
+                        <p class="hidden min-[420px]:block text-[9px] sm:text-[10px] font-bold tracking-wider uppercase text-slate-500 truncate">Welding & Construction</p>
                         <span id="db-live-indicator" title="Status Koneksi Cloud Supabase"
                             class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 transition shrink-0">
                             <span id="db-live-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
@@ -108,20 +114,25 @@
                 </div>
             </div>
 
-            <!-- Role Switcher Toggle + Kunci Mode Bos -->
-            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <!-- Role Switcher Toggle + Download App AJ + Kunci Mode Bos -->
+            <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+                <button id="btn-install-app" onclick="triggerAppInstall()" title="Download / Install Aplikasi AJ"
+                    class="w-8 h-8 sm:w-auto sm:h-9 sm:px-2.5 rounded-xl bg-[#181818] hover:bg-slate-800 text-white transition active:scale-95 flex items-center justify-center gap-1 shadow-xs shrink-0">
+                    <i data-lucide="download" class="w-3.5 h-3.5 text-[#F94D00] shrink-0"></i>
+                    <span class="hidden sm:inline text-[11px] font-bold">App</span>
+                </button>
                 <button id="btn-lock-bos" onclick="lockBosMode()" title="Kunci Layar Bos"
-                    class="hidden p-2 rounded-xl bg-stone-200/80 hover:bg-stone-300 text-slate-700 transition active:scale-95 min-w-[36px] min-h-[36px] flex items-center justify-center">
-                    <i data-lucide="lock" class="w-4 h-4"></i>
+                    class="hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-stone-200/80 hover:bg-stone-300 text-slate-700 transition active:scale-95 flex items-center justify-center shrink-0">
+                    <i data-lucide="lock" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
                 </button>
                 <div class="bg-stone-200/80 p-1 rounded-xl sm:rounded-2xl flex items-center border border-stone-300/60 shadow-inner">
                     <button id="btn-role-bos" onclick="switchRole('bos')"
-                        class="px-2.5 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 bg-blue-900 text-white shadow-xs whitespace-nowrap">
+                        class="px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 bg-blue-900 text-white shadow-xs whitespace-nowrap">
                         <i data-lucide="shield-check" class="w-3.5 h-3.5 shrink-0"></i>
                         <span>Mode Bos</span>
                     </button>
                     <button id="btn-role-tukang" onclick="switchRole('tukang')"
-                        class="px-2.5 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 text-slate-600 hover:text-slate-900 whitespace-nowrap">
+                        class="px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 text-slate-600 hover:text-slate-900 whitespace-nowrap">
                         <i data-lucide="smartphone" class="w-3.5 h-3.5 shrink-0"></i>
                         <span>HP Tukang</span>
                     </button>
@@ -871,15 +882,15 @@
                 if (!badge || !dot || !text) return;
 
                 if (status === 'online') {
-                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 transition';
+                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 transition shrink-0';
                     dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse';
                     text.textContent = label || 'Cloud Aktif';
                 } else if (status === 'error') {
-                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-100 text-rose-800 transition';
+                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-100 text-rose-800 transition shrink-0';
                     dot.className = 'w-1.5 h-1.5 rounded-full bg-rose-600';
                     text.textContent = label || 'Jalankan SQL';
                 } else {
-                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800 transition';
+                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800 transition shrink-0';
                     dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
                     text.textContent = label || 'Menghubungkan...';
                 }
@@ -1432,14 +1443,14 @@
             const viewTukang = document.getElementById('view-tukang');
 
             if (role === 'bos') {
-                btnBos.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-blue-900 text-white shadow-xs';
-                btnTukang.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
+                btnBos.className = 'px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 bg-blue-900 text-white shadow-xs whitespace-nowrap';
+                btnTukang.className = 'px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 text-slate-600 hover:text-slate-900 whitespace-nowrap';
                 viewTukang.classList.add('hidden');
                 updateBosVisibility();
                 if (isBosUnlocked) renderAll();
             } else {
-                btnTukang.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-emerald-700 text-white shadow-xs';
-                btnBos.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
+                btnTukang.className = 'px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 bg-emerald-700 text-white shadow-xs whitespace-nowrap';
+                btnBos.className = 'px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 text-slate-600 hover:text-slate-900 whitespace-nowrap';
                 updateBosVisibility();
                 viewTukang.classList.remove('hidden');
                 renderWorkerLoginGrid();
@@ -2087,6 +2098,7 @@
                 appState.assignments[dateKey] = appState.assignments[dateKey].filter(a => a.workerId !== workerId);
             });
             SupabaseService.saveState(appState);
+            SupabaseService.deleteCloudRecord('workers', workerId);
             showToast(`${w.nickname} dihapus dari daftar`);
             renderAll();
         }
@@ -2763,49 +2775,8 @@
             lucide.createIcons();
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            initPatternLock();
-            updateBosVisibility();
-            SupabaseService.init();
-            renderAll();
-
-            // Support keyboard keypad saat modal PIN terbuka di tablet/laptop
-            window.addEventListener('keydown', (e) => {
-                const pinModal = document.getElementById('modal-pin');
-                if (pinModal && !pinModal.classList.contains('hidden')) {
-                    if (/^[0-9]$/.test(e.key)) pressPin(e.key);
-                    else if (e.key === 'Backspace') clearPin();
-                    else if (e.key === 'Escape') closeModal('modal-pin');
-
-        <!-- ... existing code ... -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AdiJaya Dasboard — Operasional & Payroll Bengkel Las</title>
-
-    <!-- [TAMBAHAN 1] Meta & Link Ikon Aplikasi Layar Utama (iOS & Android) -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="AdiJaya">
-    <meta name="theme-color" content="#181818">
-    <link id="apple-touch-icon" rel="apple-touch-icon" sizes="512x512" href="">
-    <link id="app-favicon" rel="icon" type="image/png" href="">
-    <link id="pwa-manifest" rel="manifest" href="">
-<!-- ... existing code ... -->
-            <!-- Role Switcher Toggle + Kunci Mode Bos -->
-            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                <!-- [TAMBAHAN 2] Tombol Download / Install Aplikasi AJ -->
-                <button id="btn-install-app" onclick="triggerAppInstall()" title="Download / Install Aplikasi AJ"
-                    class="p-2 rounded-xl bg-[#181818] hover:bg-slate-800 text-white transition active:scale-95 min-w-[34px] min-h-[34px] flex items-center justify-center gap-1 shadow-xs">
-                    <i data-lucide="download" class="w-3.5 h-3.5 text-[#F94D00]"></i>
-                    <span class="hidden sm:inline text-[11px] font-bold">App</span>
-                </button>
-                <button id="btn-lock-bos" onclick="lockBosMode()" title="Kunci Layar Bos"
-<!-- ... existing code ... -->
-            renderWorkersManagement();
-            lucide.createIcons();
-        }
-
         // ====================================================================
-        // [TAMBAHAN 3] GENERATOR IKON LOGO AJ & HANDLER INSTALL / DOWNLOAD APP
+        // GENERATOR IKON LOGO AJ & HANDLER INSTALL / DOWNLOAD APP (iOS & ANDROID)
         // ====================================================================
         let deferredInstallPrompt = null;
 
@@ -2925,7 +2896,18 @@
         window.addEventListener('DOMContentLoaded', () => {
             initPatternLock();
             updateBosVisibility();
+            SupabaseService.init();
             renderAll();
+
+            // Support keyboard keypad saat modal PIN terbuka di tablet/laptop
+            window.addEventListener('keydown', (e) => {
+                const pinModal = document.getElementById('modal-pin');
+                if (pinModal && !pinModal.classList.contains('hidden')) {
+                    if (/^[0-9]$/.test(e.key)) pressPin(e.key);
+                    else if (e.key === 'Backspace') clearPin();
+                    else if (e.key === 'Escape') closeModal('modal-pin');
+                }
+            });
         });
     </script>
 </body>
