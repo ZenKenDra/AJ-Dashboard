@@ -85,11 +85,11 @@
                     </h1>
                     <div class="flex items-center gap-1.5 mt-0.5">
                         <p class="text-[10px] font-bold tracking-wider uppercase text-slate-500">Welding & Construction</p>
-                        <button id="db-live-indicator" onclick="promptSupabaseUrl()" title="Status Koneksi Cloud Supabase"
-                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800 cursor-pointer transition">
-                            <span id="db-live-dot" class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                            <span id="db-live-text">Set URL Cloud</span>
-                        </button>
+                        <span id="db-live-indicator" title="Status Koneksi Cloud Supabase"
+                            class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 transition">
+                            <span id="db-live-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                            <span id="db-live-text">Menghubungkan...</span>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -776,32 +776,6 @@
         </div>
     </div>
 
-    <!-- Modal 6: Konfigurasi 1x URL Project Supabase -->
-    <div id="modal-sb-url" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between">
-                <h3 class="text-sm font-extrabold text-slate-900">Hubungkan URL Project Supabase</h3>
-                <button onclick="closeModal('modal-sb-url')" class="p-2 rounded-full bg-stone-100 text-slate-500">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            </div>
-            <p class="text-xs text-slate-500 leading-relaxed">
-                API Key Anda sudah tertanam. Masukkan <strong>Project URL</strong> dari menu <em>Project Settings &rarr; Data API</em> di Supabase (contoh: <code>https://abcdefgh.supabase.co</code>) agar seluruh HP Tukang & Bos tersinkron otomatis:
-            </p>
-            <input id="input-sb-url" type="url" placeholder="https://xxxx.supabase.co"
-                class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-mono focus:outline-none focus:border-blue-900">
-            <div class="flex flex-col gap-2">
-                <button onclick="saveSupabaseUrlAndConnect()" class="w-full py-3 rounded-xl bg-blue-900 hover:bg-blue-950 text-white font-extrabold text-xs transition">
-                    Simpan & Sinkronkan ke Supabase Sekarang
-                </button>
-                <button onclick="copyShareableWorkerLink()" class="w-full py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-200 transition">
-                    <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
-                    <span>Salin Link Siap Pakai untuk HP Tukang</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- ===================================================================== -->
     <!-- JAVASCRIPT LOGIC & EMBEDDED ALWAYS-OPEN DATABASE ENGINE               -->
     <!-- ===================================================================== -->
@@ -810,23 +784,12 @@
          * ====================================================================
          * SUPABASE & EMBEDDED ALWAYS-OPEN DATABASE ENGINE (MULTI-DEVICE)
          * ====================================================================
-         * 1. Ganti DEFAULT_SUPABASE_URL di bawah dengan Project URL Supabase Anda
-         *    (atau bagikan link dengan parameter ?sb_url=https://xxxx.supabase.co)
-         * 2. Hosting file index.html ini secara gratis di Netlify Drop / Vercel /
-         *    GitHub Pages agar bisa dibuka dari semua HP Tukang via internet.
          */
-        const DEFAULT_SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-
-        // Otomatis tangkap ?sb_url=... dari link yang dibagikan Bos ke HP Tukang
-        const urlParams = new URLSearchParams(window.location.search);
-        const paramSbUrl = urlParams.get('sb_url');
-        if (paramSbUrl && paramSbUrl.startsWith('https://') && paramSbUrl.includes('.supabase.co')) {
-            localStorage.setItem('adijaya_sb_url', paramSbUrl.replace(/\/+$/, ''));
-        }
+        const DEFAULT_SUPABASE_URL = 'https://qcevhuqfsuhcpcfdshel.supabase.co';
 
         const SupabaseService = {
             config: {
-                url: localStorage.getItem('adijaya_sb_url') || DEFAULT_SUPABASE_URL,
+                url: DEFAULT_SUPABASE_URL,
                 publishableKey: 'sb_publishable_iCz_3K5XTTOIF6KFGMVM3g_R7AhicN6',
                 secretKey: 'sb_secret_2Xfpho4U4kIKmUqz1uPogg_5HdaOKaV',
                 dbName: 'AdiJayaEmbeddedDB',
@@ -843,8 +806,7 @@
                 return Boolean(
                     this.config.url &&
                     this.config.url.startsWith('https://') &&
-                    this.config.url.includes('.supabase.co') &&
-                    !this.config.url.includes('YOUR_PROJECT_ID')
+                    this.config.url.includes('.supabase.co')
                 );
             },
 
@@ -855,17 +817,17 @@
                 if (!badge || !dot || !text) return;
 
                 if (status === 'online') {
-                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 cursor-pointer transition';
+                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 transition';
                     dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse';
-                    text.textContent = label || 'Supabase Terhubung';
+                    text.textContent = label || 'Cloud Aktif';
                 } else if (status === 'error') {
-                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-100 text-rose-800 cursor-pointer transition';
+                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-rose-100 text-rose-800 transition';
                     dot.className = 'w-1.5 h-1.5 rounded-full bg-rose-600';
-                    text.textContent = label || 'Cek SQL / URL';
+                    text.textContent = label || 'Jalankan SQL';
                 } else {
-                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800 cursor-pointer transition';
+                    badge.className = 'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-100 text-amber-800 transition';
                     dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500';
-                    text.textContent = label || 'Set URL Cloud';
+                    text.textContent = label || 'Menghubungkan...';
                 }
             },
 
@@ -879,11 +841,9 @@
                     renderAll();
                 }
 
-                // 2. Hubungkan ke Cloud Supabase jika Project URL sudah valid
+                // 2. Langsung hubungkan ke Cloud Supabase secara otomatis
                 if (window.supabase && this.hasValidUrl()) {
                     await this.connectAndPullCloud();
-                } else {
-                    this.updateIndicator('setup', 'Klik Set URL Cloud');
                 }
 
                 // 3. Sinkronisasi antar-tab lokal
@@ -1159,45 +1119,6 @@
                 return structuredClone(DEFAULT_STATE);
             }
         };
-
-        function promptSupabaseUrl() {
-            const input = document.getElementById('input-sb-url');
-            if (input) {
-                input.value = SupabaseService.hasValidUrl() ? SupabaseService.config.url : '';
-            }
-            document.getElementById('modal-sb-url').classList.remove('hidden');
-            lucide.createIcons();
-        }
-
-        async function saveSupabaseUrlAndConnect() {
-            const val = document.getElementById('input-sb-url').value.trim().replace(/\/+$/, '');
-            if (!val.startsWith('https://') || !val.includes('.supabase.co')) {
-                showToast('Format URL harus https://xxxx.supabase.co');
-                return;
-            }
-            localStorage.setItem('adijaya_sb_url', val);
-            SupabaseService.config.url = val;
-            closeModal('modal-sb-url');
-            showToast('Menghubungkan ke Supabase...');
-            await SupabaseService.connectAndPullCloud();
-            await SupabaseService.pushToSupabaseCloud(appState);
-            showToast('Tersambung & tersinkron ke semua HP!');
-        }
-
-        function copyShareableWorkerLink() {
-            const sbUrl = SupabaseService.hasValidUrl()
-                ? SupabaseService.config.url
-                : document.getElementById('input-sb-url').value.trim().replace(/\/+$/, '');
-
-            if (!sbUrl || !sbUrl.startsWith('https://')) {
-                showToast('Isi Project URL Supabase terlebih dahulu');
-                return;
-            }
-            const baseUrl = window.location.origin + window.location.pathname;
-            const shareLink = `${baseUrl}?sb_url=${encodeURIComponent(sbUrl)}`;
-            copyTextToClipboard(shareLink);
-            showToast('Link multi-HP disalin! Kirim ke grup WA tukang');
-        }
 
         /**
          * ====================================================================
